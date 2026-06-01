@@ -61,6 +61,16 @@
 | 当前目录没有可参考的现有实现 | 将从目标架构开始设计 |
 | 规划文件状态落后于 Git 实际状态 | 已将阶段 4 更新为完成，并把当前阶段推进到设计审阅门槛 |
 | 当前尚未确认实施计划技术栈假设 | 在进入代码实现前请用户确认或提出调整 |
+| Docker build 无法完成验证 | Docker daemon 可用，但拉取 `node:25-alpine` 连续两次 Docker Hub 网络超时；Dockerfile 未进入后续构建步骤 |
+
+## 实现发现
+| 发现 | 证据 |
+|------|------|
+| 本地验证通过 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 通过 |
+| Compose 结构有效 | `docker compose config` 输出包含 `server` 和 `postgres` 服务 |
+| 端到端 smoke 使用真实 HTTP server | `scripts/smoke.ts` 启动 Fastify server 并通过 HTTP 调用 detect API 与 MCP endpoint |
+| MCP gateway 使用官方 SDK transport | `apps/server/src/app.ts` 使用 `StreamableHTTPServerTransport`，`packages/mcp/src/sdk-server.ts` 使用 `McpServer` |
+| 最终验证通过 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 最终重跑均通过 |
 
 ## 资源
 - MCP 官方仓库：https://github.com/modelcontextprotocol/modelcontextprotocol

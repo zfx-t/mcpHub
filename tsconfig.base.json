@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mcphub/core": ["packages/core/src/index.ts"],
+      "@mcphub/db": ["packages/db/src/index.ts"],
+      "@mcphub/extractors": ["packages/extractors/src/index.ts"],
+      "@mcphub/mcp": ["packages/mcp/src/index.ts"]
+    },
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  }
+}

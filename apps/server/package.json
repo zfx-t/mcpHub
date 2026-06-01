@@ -1,0 +1,17 @@
+{
+  "name": "@mcphub/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/main.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@mcphub/core": "workspace:*",
+    "@mcphub/db": "workspace:*",
+    "@mcphub/extractors": "workspace:*",
+    "@mcphub/mcp": "workspace:*"
+  }
+}

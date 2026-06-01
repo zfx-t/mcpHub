@@ -76,14 +76,31 @@
 - 完成时间：2026-06-01 19:34 CST
 
 ### 阶段 6：实施计划审阅与实现启动
-- **状态：** in_progress
+- **状态：** complete
 - **开始时间：** 2026-06-01 19:34 CST
 - 执行的操作：
   - 将当前阶段推进到实施计划审阅与实现启动。
   - 记录实施计划的技术栈假设：TypeScript monorepo、pnpm workspaces、官方 MCP SDK、PostgreSQL、Manifest V3 extension。
-- 下一步：
-  - 用户确认实施计划和技术栈假设，或提出调整。
-  - 获准后从实施计划阶段 0 开始创建项目脚手架。
+  - 用户要求继续完成工作直到 plan 全部完成。
+  - 创建实现分支 `implement-web-to-mcp-mvp`。
+  - 完成 TypeScript monorepo、server、extension、core、db、extractors、mcp packages、Docker/Compose、README、smoke 脚本。
+  - 根据规格审查补齐 validated rule runner、第三个 custom route、失败 backoff、官方 MCP SDK Streamable HTTP route、request id/logging/rate limit、server+postgres compose、真实 HTTP smoke。
+- 完成时间：2026-06-01 21:44 CST
+
+### 阶段 7：最终审查与收尾
+- **状态：** complete
+- **开始时间：** 2026-06-01 21:44 CST
+- 执行的操作：
+  - 运行 `pnpm typecheck`：通过。
+  - 运行 `pnpm lint`：通过。
+  - 运行 `pnpm test`：6 个测试文件、14 个测试通过。
+  - 运行 `pnpm build`：通过。
+  - 运行 `pnpm test:e2e`：通过，输出 `Smoke test passed`。
+  - 运行 `docker compose config`：通过，包含 server 和 postgres。
+  - 尝试 `docker build -t mcphub:dev .` 两次，均因 Docker Hub 拉取 `node:25-alpine` 网络超时失败。
+  - 最终重跑 `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e`：均通过。
+  - 完成计划 Phase 0-7 的本地完成审计。
+- 完成时间：2026-06-01 21:54 CST
 
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
@@ -100,8 +117,8 @@
 ## 五问重启检查
 | 问题 | 答案 |
 |------|------|
-| 我在哪里？ | 阶段 6：实施计划审阅与实现启动 |
-| 我要去哪里？ | 等待用户确认实施计划和技术栈假设，获准后进入代码实现 |
+| 我在哪里？ | 全部计划阶段已完成 |
+| 我要去哪里？ | 等待用户验收或后续扩展需求 |
 | 目标是什么？ | 设计网页抓取到 MCP/Agent 可读内容的工具 |
 | 我学到了什么？ | 见 findings.md |
 | 我做了什么？ | 见上方记录 |

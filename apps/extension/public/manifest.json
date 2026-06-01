@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "MCPHub Detector",
+  "version": "0.1.0",
+  "description": "Detect whether the current website is available as an MCP source.",
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
+  "host_permissions": ["http://localhost/*", "https://*/*"],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "MCPHub Detector"
+  }
+}

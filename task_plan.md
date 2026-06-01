@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 6：实施计划审阅与实现启动
+全部完成
 
 ## 各阶段
 
@@ -44,11 +44,24 @@
 - **状态：** complete
 
 ### 阶段 6：实施计划审阅与实现启动
-- [ ] 用户确认实施计划和技术栈假设
-- [ ] 若需要调整技术栈或阶段顺序，先更新实施计划
-- [ ] 获准后从阶段 0 项目脚手架开始实现
-- [ ] 每个实现阶段完成后更新进度并运行对应校验
-- **状态：** in_progress
+- [x] 用户确认实施计划和技术栈假设
+- [x] 若需要调整技术栈或阶段顺序，先更新实施计划
+- [x] 获准后从阶段 0 项目脚手架开始实现
+- [x] 每个实现阶段完成后更新进度并运行对应校验
+- **状态：** complete
+
+### 阶段 7：最终审查与收尾
+- [x] 完成实施计划 Phase 0-7 的代码与文档工作
+- [x] 运行 `pnpm typecheck`
+- [x] 运行 `pnpm lint`
+- [x] 运行 `pnpm test`
+- [x] 运行 `pnpm build`
+- [x] 运行 `pnpm test:e2e`
+- [x] 运行 `docker compose config`
+- [x] 完成子代理规格审查和代码质量审查
+- [x] 根据审查结果修复阻塞问题
+- [x] 进行最终完成审计
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
@@ -72,6 +85,7 @@
 | 设计文档已提交 | Git 提交为 `8dc3a68 Add web-to-mcp design` |
 | 设计文档已获用户批准 | 用户审阅后确认没有问题 |
 | 实施计划已写入 | `docs/superpowers/plans/2026-06-01-web-to-mcp-implementation-plan.md` |
+| MVP 实现已完成本地验证 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 均通过 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
@@ -79,6 +93,7 @@
 | 当前目录不是可用 Git 仓库，git log 失败 | 1 | 记录为环境约束；设计阶段继续推进 |
 | 当前 .git 是空目录，git status 失败 | 1 | 无法提交设计文档；记录限制并交付文件 |
 | 沙箱内 .git 是只读挂载，普通 git init 失败 | 1 | 使用提升权限完成真实仓库初始化，分支为 main |
+| `docker build -t mcphub:dev .` 拉取基础镜像超时 | 2 | 记录为 Docker Hub 网络限制；已用 `docker compose config` 验证 compose 结构 |
 
 ## 备注
 - 外部网页和规范内容只写入 findings.md，不写入 task_plan.md。
