@@ -46,7 +46,7 @@
   - `progress.md`
 
 ### 阶段 4：设计文档
-- **状态：** in_progress
+- **状态：** complete
 - 执行的操作：
   - 写入 `docs/superpowers/specs/2026-06-01-web-to-mcp-design.md`。
   - 自检占位符、矛盾、范围和歧义。
@@ -55,11 +55,35 @@
   - 准备请求用户审阅设计文档。
   - 用户要求初始化 Git 仓库并设置 main 分支。
   - 沙箱内 `.git` 是只读挂载，普通 `git init` 失败；提升权限后在真实文件系统中完成 `git init -b main`。
+  - 确认设计文档已提交，提交为 `8dc3a68 Add web-to-mcp design`。
 - 创建/修改的文件：
   - `docs/superpowers/specs/2026-06-01-web-to-mcp-design.md`
   - `task_plan.md`
   - `findings.md`
   - `progress.md`
+
+### 阶段 5：设计文档审阅与实施计划准备
+- **状态：** complete
+- **开始时间：** 2026-06-01 19:23 CST
+- 执行的操作：
+  - 恢复并读取 `task_plan.md`、`findings.md`、`progress.md`。
+  - 运行会话恢复脚本，未发现需要补录的额外上下文。
+  - 核对设计文档和 Git 状态：当前分支为 `main`，最新提交为 `8dc3a68 Add web-to-mcp design`。
+  - 将规划文件更新为“设计文档已提交，等待用户审阅后再进入实施计划”。
+  - 用户审阅设计文档并确认没有问题。
+  - 创建 `docs/superpowers/plans/2026-06-01-web-to-mcp-implementation-plan.md`。
+  - 实施计划拆分为项目脚手架、领域模型与存储、检测 API、抽取与缓存、MCP gateway、浏览器插件、部署运维、端到端验证。
+- 完成时间：2026-06-01 19:34 CST
+
+### 阶段 6：实施计划审阅与实现启动
+- **状态：** in_progress
+- **开始时间：** 2026-06-01 19:34 CST
+- 执行的操作：
+  - 将当前阶段推进到实施计划审阅与实现启动。
+  - 记录实施计划的技术栈假设：TypeScript monorepo、pnpm workspaces、官方 MCP SDK、PostgreSQL、Manifest V3 extension。
+- 下一步：
+  - 用户确认实施计划和技术栈假设，或提出调整。
+  - 获准后从实施计划阶段 0 开始创建项目脚手架。
 
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
@@ -76,8 +100,8 @@
 ## 五问重启检查
 | 问题 | 答案 |
 |------|------|
-| 我在哪里？ | 阶段 4：设计文档 |
-| 我要去哪里？ | 请求用户审阅设计文档 |
+| 我在哪里？ | 阶段 6：实施计划审阅与实现启动 |
+| 我要去哪里？ | 等待用户确认实施计划和技术栈假设，获准后进入代码实现 |
 | 目标是什么？ | 设计网页抓取到 MCP/Agent 可读内容的工具 |
 | 我学到了什么？ | 见 findings.md |
 | 我做了什么？ | 见上方记录 |

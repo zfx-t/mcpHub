@@ -11,10 +11,11 @@
 - 用户选择部署形态为服务端部署：可由用户自部署，也可使用公开网络服务，并由用户配置到 Agent。
 
 ## 项目上下文发现
-- 工作目录：`/home/zeroth/ForMe/mcpHub`
-- 目录当前基本为空，仅有 `.agents`、`.codex`、`.git` 目录。
-- `git log` 报错：当前目录不是可用 Git 仓库或 Git 元数据不可用。
-- 未发现 README、package.json、pyproject.toml、Cargo.toml、go.mod 或 docs。
+- 工作目录：`/home/zfxt/formyself/mcpHub`
+- 目录当前以设计与规划文件为主，包含 `task_plan.md`、`findings.md`、`progress.md` 和 `docs/superpowers/specs/2026-06-01-web-to-mcp-design.md`。
+- Git 仓库已初始化，当前分支为 `main`，并跟踪 `origin/main`。
+- 最新提交为 `8dc3a68 Add web-to-mcp design`。
+- 未发现 README、package.json、pyproject.toml、Cargo.toml 或 go.mod。
 
 ## 研究发现
 - MCP 官方规范当前最新版本为 `2025-11-25`。官方仓库说明该仓库包含 MCP specification、protocol schema 和官方文档；GitHub release 显示最新 release 为 2025-11-25。
@@ -42,11 +43,24 @@
 | MCP 接口范围已确认 | 首版包括 sources、source items、item read、source.search、source.refresh、extract.preview、debug.explain；rule.validate、rule.publish 和公共审核流后置 |
 | 插件正式定位为 MCPHub detector | 用户确认修正版插件设计：只查询服务器并展示 MCP 可用性 |
 | 服务端流程和错误模型已确认 | 插件查询链路、Agent/MCP 读取链路、抓取优先级和诊断错误码已得到用户认可 |
+| 设计文档已落盘并提交 | `docs/superpowers/specs/2026-06-01-web-to-mcp-design.md` 已写入并由提交 `8dc3a68` 记录 |
+| 设计文档已获批 | 用户审阅后确认没有问题，可以继续后续工作 |
+
+## 实施计划建议
+| 建议 | 理由 |
+|------|------|
+| TypeScript monorepo | 同时覆盖 Node 服务端、共享 schema、MCP SDK 集成和浏览器扩展 |
+| `pnpm` workspaces | 适合多包仓库，能明确 apps 与 packages 边界 |
+| PostgreSQL 作为生产数据库目标 | 服务端部署和公开实例更适合稳定关系型存储 |
+| Browser extension 使用 Manifest V3 | Chrome 现代扩展默认形态，符合 detector 插件边界 |
+| 先做检测 API，再做 MCP gateway 和扩展 UI | 先稳定 Source 匹配和服务端契约，降低后续 UI 返工 |
 
 ## 遇到的问题
 | 问题 | 解决方案 |
 |------|---------|
 | 当前目录没有可参考的现有实现 | 将从目标架构开始设计 |
+| 规划文件状态落后于 Git 实际状态 | 已将阶段 4 更新为完成，并把当前阶段推进到设计审阅门槛 |
+| 当前尚未确认实施计划技术栈假设 | 在进入代码实现前请用户确认或提出调整 |
 
 ## 资源
 - MCP 官方仓库：https://github.com/modelcontextprotocol/modelcontextprotocol
