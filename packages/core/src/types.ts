@@ -20,6 +20,29 @@ export type RefreshMode = "cached" | "force" | "validate_only";
 
 export type ExtractionMethod = "custom_route" | "validated_rule" | "generic";
 
+export type PluginType = "web_content" | "api" | "custom";
+
+export type ToolEffect = "read" | "write" | "dangerous";
+
+export type CredentialType = "bearer" | "api_key_header" | "api_key_query" | "basic" | "cookie" | "env";
+
+export type AuditStatus = "allowed" | "blocked" | "succeeded" | "failed" | "policy_denied";
+
+export type PlatformErrorCode =
+  | "PLUGIN_NOT_FOUND"
+  | "PLUGIN_DISABLED"
+  | "TOOL_NOT_FOUND"
+  | "TOOL_DISABLED"
+  | "INVALID_TOOL_INPUT"
+  | "POLICY_DENIED"
+  | "CONFIRMATION_REQUIRED"
+  | "CREDENTIAL_MISSING"
+  | "CREDENTIAL_INVALID"
+  | "REMOTE_HTTP_ERROR"
+  | "REMOTE_TIMEOUT"
+  | "PLUGIN_EXECUTION_ERROR"
+  | "AUDIT_WRITE_FAILED";
+
 export interface RefreshPolicy {
   ttlSeconds: number;
   staleWhileRevalidateSeconds?: number;
@@ -138,4 +161,65 @@ export interface SourceSearchFilters {
   visibility?: Visibility;
   healthStatus?: HealthStatus;
   hostname?: string;
+}
+
+export interface Plugin {
+  id: string;
+  name: string;
+  version: string;
+  type: PluginType;
+  description: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PluginTool {
+  id: string;
+  pluginId: string;
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  effect: ToolEffect;
+  requiresConfirmation: boolean;
+  credentialRefs: string[];
+  operation?: PluginToolOperation;
+  enabled: boolean;
+}
+
+export interface HttpPluginToolOperation {
+  type: "http";
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
+  path: string;
+}
+
+export type PluginToolOperation = HttpPluginToolOperation;
+
+export interface Credential {
+  id: string;
+  pluginId: string;
+  requirementId?: string;
+  name: string;
+  type: CredentialType;
+  secretRef: string;
+  scope?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AuditRecord {
+  id: string;
+  requestId: string;
+  pluginId: string;
+  toolName: string;
+  effect: ToolEffect;
+  status: AuditStatus;
+  target?: string;
+  inputSummary?: Record<string, unknown>;
+  statusCode?: number;
+  durationMs?: number;
+  errorCode?: string;
+  errorMessage?: string;
+  timestamp: string;
 }

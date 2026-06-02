@@ -2,9 +2,21 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { Pool } from "pg";
-import type { DiagnosticRecord, Document, FeedItem, Rule, Source, SourceSearchFilters } from "@mcphub/core";
+import type {
+  AuditRecord,
+  AuditStatus,
+  Credential,
+  DiagnosticRecord,
+  Document,
+  FeedItem,
+  Plugin,
+  PluginTool,
+  Rule,
+  Source,
+  SourceSearchFilters
+} from "@mcphub/core";
 import { sourceMatchesUrl } from "@mcphub/core";
-import type { McpHubRepository } from "./repository.js";
+import { redactAuditRecord, type McpHubRepository } from "./repository.js";
 
 export class PostgresRepository implements McpHubRepository {
   readonly pool: Pool;
@@ -19,6 +31,197 @@ export class PostgresRepository implements McpHubRepository {
 
   async migrate(): Promise<void> {
     await this.pool.query(loadSchemaSql());
+  }
+
+  async listPlugins(): Promise<Plugin[]> {
+    const result = await this.pool.query("SELECT * FROM plugins ORDER BY name ASC");
+    return result.rows.map(rowToPlugin);
+  }
+
+  async getPlugin(pluginId: string): Promise<Plugin | undefined> {
+    const result = await this.pool.query("SELECT * FROM plugins WHERE id = $1", [pluginId]);
+    return result.rows[0] ? rowToPlugin(result.rows[0]) : undefined;
+  }
+
+  async upsertPlugin(plugin: Plugin): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO plugins (
+        id, name, version, type, description, enabled, config, created_at, updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      ON CONFLICT (id) DO UPDATE SET
+        name = EXCLUDED.name,
+        version = EXCLUDED.version,
+        type = EXCLUDED.type,
+        description = EXCLUDED.description,
+        enabled = EXCLUDED.enabled,
+        config = EXCLUDED.config,
+        created_at = EXCLUDED.created_at,
+        updated_at = EXCLUDED.updated_at`,
+      [
+        plugin.id,
+        plugin.name,
+        plugin.version,
+        plugin.type,
+        plugin.description,
+        plugin.enabled,
+        jsonb(plugin.config),
+        plugin.createdAt,
+        plugin.updatedAt
+      ]
+    );
+  }
+
+  async listPluginTools(pluginId?: string): Promise<PluginTool[]> {
+    const result = pluginId
+      ? await this.pool.query("SELECT * FROM plugin_tools WHERE plugin_id = $1 ORDER BY name ASC", [pluginId])
+      : await this.pool.query("SELECT * FROM plugin_tools ORDER BY name ASC");
+    return result.rows.map(rowToPluginTool);
+  }
+
+  async getPluginTool(toolId: string): Promise<PluginTool | undefined> {
+    const result = await this.pool.query("SELECT * FROM plugin_tools WHERE id = $1", [toolId]);
+    return result.rows[0] ? rowToPluginTool(result.rows[0]) : undefined;
+  }
+
+  async getPluginToolByName(name: string): Promise<PluginTool | undefined> {
+    const result = await this.pool.query("SELECT * FROM plugin_tools WHERE name = $1", [name]);
+    return result.rows[0] ? rowToPluginTool(result.rows[0]) : undefined;
+  }
+
+  async upsertPluginTool(tool: PluginTool): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO plugin_tools (
+        id, plugin_id, name, description, input_schema, effect, requires_confirmation, credential_refs, operation, enabled
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+      ON CONFLICT (id) DO UPDATE SET
+        plugin_id = EXCLUDED.plugin_id,
+        name = EXCLUDED.name,
+        description = EXCLUDED.description,
+        input_schema = EXCLUDED.input_schema,
+        effect = EXCLUDED.effect,
+        requires_confirmation = EXCLUDED.requires_confirmation,
+        credential_refs = EXCLUDED.credential_refs,
+        operation = EXCLUDED.operation,
+        enabled = EXCLUDED.enabled`,
+      [
+        tool.id,
+        tool.pluginId,
+        tool.name,
+        tool.description,
+        jsonb(tool.inputSchema),
+        tool.effect,
+        tool.requiresConfirmation,
+        jsonb(tool.credentialRefs),
+        jsonb(tool.operation),
+        tool.enabled
+      ]
+    );
+  }
+
+  async listCredentials(pluginId?: string): Promise<Credential[]> {
+    const result = pluginId
+      ? await this.pool.query("SELECT * FROM credentials WHERE plugin_id = $1 ORDER BY name ASC", [pluginId])
+      : await this.pool.query("SELECT * FROM credentials ORDER BY name ASC");
+    return result.rows.map(rowToCredential);
+  }
+
+  async getCredential(credentialId: string): Promise<Credential | undefined> {
+    const result = await this.pool.query("SELECT * FROM credentials WHERE id = $1", [credentialId]);
+    return result.rows[0] ? rowToCredential(result.rows[0]) : undefined;
+  }
+
+  async getCredentialForRequirement(pluginId: string, requirementId: string): Promise<Credential | undefined> {
+    const result = await this.pool.query("SELECT * FROM credentials WHERE plugin_id = $1 AND COALESCE(requirement_id, id) = $2", [
+      pluginId,
+      requirementId
+    ]);
+    return result.rows[0] ? rowToCredential(result.rows[0]) : undefined;
+  }
+
+  async upsertCredential(credential: Credential): Promise<void> {
+    await this.pool.query(
+      `INSERT INTO credentials (
+        id, plugin_id, requirement_id, name, type, secret_ref, scope, created_at, updated_at
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+      ON CONFLICT (id) DO UPDATE SET
+        plugin_id = EXCLUDED.plugin_id,
+        requirement_id = EXCLUDED.requirement_id,
+        name = EXCLUDED.name,
+        type = EXCLUDED.type,
+        secret_ref = EXCLUDED.secret_ref,
+        scope = EXCLUDED.scope,
+        created_at = EXCLUDED.created_at,
+        updated_at = EXCLUDED.updated_at`,
+      [
+        credential.id,
+        credential.pluginId,
+        credential.requirementId,
+        credential.name,
+        credential.type,
+        credential.secretRef,
+        credential.scope,
+        credential.createdAt,
+        credential.updatedAt
+      ]
+    );
+  }
+
+  async listAuditRecords(filter: { pluginId?: string; toolName?: string; status?: AuditStatus } = {}): Promise<AuditRecord[]> {
+    const clauses: string[] = [];
+    const values: string[] = [];
+    if (filter.pluginId) {
+      values.push(filter.pluginId);
+      clauses.push(`plugin_id = $${values.length}`);
+    }
+    if (filter.toolName) {
+      values.push(filter.toolName);
+      clauses.push(`tool_name = $${values.length}`);
+    }
+    if (filter.status) {
+      values.push(filter.status);
+      clauses.push(`status = $${values.length}`);
+    }
+    const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
+    const result = await this.pool.query(`SELECT * FROM audit_records ${where} ORDER BY timestamp ASC`, values);
+    return result.rows.map(rowToAuditRecord);
+  }
+
+  async addAuditRecord(record: AuditRecord): Promise<void> {
+    const safeRecord = redactAuditRecord(record);
+    await this.pool.query(
+      `INSERT INTO audit_records (
+        id, request_id, plugin_id, tool_name, effect, status, target, input_summary,
+        status_code, duration_ms, error_code, error_message, timestamp
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+      ON CONFLICT (id) DO UPDATE SET
+        request_id = EXCLUDED.request_id,
+        plugin_id = EXCLUDED.plugin_id,
+        tool_name = EXCLUDED.tool_name,
+        effect = EXCLUDED.effect,
+        status = EXCLUDED.status,
+        target = EXCLUDED.target,
+        input_summary = EXCLUDED.input_summary,
+        status_code = EXCLUDED.status_code,
+        duration_ms = EXCLUDED.duration_ms,
+        error_code = EXCLUDED.error_code,
+        error_message = EXCLUDED.error_message,
+        timestamp = EXCLUDED.timestamp`,
+      [
+        safeRecord.id,
+        safeRecord.requestId,
+        safeRecord.pluginId,
+        safeRecord.toolName,
+        safeRecord.effect,
+        safeRecord.status,
+        safeRecord.target,
+        jsonb(safeRecord.inputSummary),
+        safeRecord.statusCode,
+        safeRecord.durationMs,
+        safeRecord.errorCode,
+        safeRecord.errorMessage,
+        safeRecord.timestamp
+      ]
+    );
   }
 
   async listSources(filters: SourceSearchFilters = {}): Promise<Source[]> {
@@ -324,6 +527,67 @@ function rowToSource(row: any): Source {
     lastError: row.last_error ?? undefined,
     failureCount: row.failure_count,
     backoffUntil: toIso(row.backoff_until)
+  };
+}
+
+function rowToPlugin(row: any): Plugin {
+  return {
+    id: row.id,
+    name: row.name,
+    version: row.version,
+    type: row.type,
+    description: row.description,
+    enabled: row.enabled,
+    config: row.config,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at)
+  };
+}
+
+function rowToPluginTool(row: any): PluginTool {
+  return {
+    id: row.id,
+    pluginId: row.plugin_id,
+    name: row.name,
+    description: row.description,
+    inputSchema: row.input_schema,
+    effect: row.effect,
+    requiresConfirmation: row.requires_confirmation,
+    credentialRefs: row.credential_refs,
+    operation: row.operation ?? undefined,
+    enabled: row.enabled
+  };
+}
+
+function rowToCredential(row: any): Credential {
+  return {
+    id: row.id,
+    pluginId: row.plugin_id,
+    requirementId: row.requirement_id ?? undefined,
+    name: row.name,
+    type: row.type,
+    secretRef: row.secret_ref,
+    scope: row.scope ?? undefined,
+    createdAt: toIso(row.created_at),
+    updatedAt: toIso(row.updated_at)
+  };
+}
+
+function rowToAuditRecord(row: any): AuditRecord {
+  return {
+    id: row.id,
+    requestId: row.request_id,
+    pluginId: row.plugin_id,
+    toolName: row.tool_name,
+    effect: row.effect,
+    status: row.status,
+    target: row.target ?? undefined,
+    inputSummary: row.input_summary ?? undefined,
+    statusCode: row.status_code ?? undefined,
+    durationMs: row.duration_ms === null ? undefined : Number(row.duration_ms),
+    errorCode: row.error_code ?? undefined,
+    errorMessage: row.error_message ?? undefined,
+    timestamp: toIso(row.timestamp) ?? new Date().toISOString()
   };
 }
 

@@ -26,7 +26,7 @@ export const sourceSchema = z.object({
 export const ruleSchema = z.object({
   id: z.string().min(1),
   sourceId: z.string().min(1),
-  type: z.enum(["generic", "validatedd", "custom_route"]),
+  type: z.enum(["generic", "validated", "custom_route"]),
   version: z.number().int().positive(),
   urlPattern: z.string().min(1),
   fieldMappings: z.record(z.string()),
@@ -83,3 +83,145 @@ export const sourceSearchFiltersSchema = z.object({
   healthStatus: z.enum(["healthy", "degraded", "failing", "unknown"]).optional(),
   hostname: z.string().optional()
 });
+
+export const pluginIdSchema = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/, {
+  message: "Plugin IDs must be lowercase kebab or dotted lowercase identifiers."
+});
+
+export const pluginToolNameSchema = z.string().regex(/^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/, {
+  message: "Tool names must use lowercase dot-separated namespaces."
+});
+
+export const httpMethodSchema = z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]);
+
+export const pluginToolOperationSchema = z.object({
+  type: z.literal("http"),
+  method: httpMethodSchema,
+  path: z.string().regex(/^\//, { message: "HTTP operation paths must start with /." })
+});
+
+export const toolEffectSchema = z.enum(["read", "write", "dangerous"]);
+
+export const credentialTypeSchema = z.enum(["bearer", "api_key_header", "api_key_query", "basic", "cookie", "env"]);
+
+export const auditStatusSchema = z.enum(["allowed", "blocked", "succeeded", "failed", "policy_denied"]);
+
+export const platformErrorCodeSchema = z.enum([
+  "PLUGIN_NOT_FOUND",
+  "PLUGIN_DISABLED",
+  "TOOL_NOT_FOUND",
+  "TOOL_DISABLED",
+  "INVALID_TOOL_INPUT",
+  "POLICY_DENIED",
+  "CONFIRMATION_REQUIRED",
+  "CREDENTIAL_MISSING",
+  "CREDENTIAL_INVALID",
+  "REMOTE_HTTP_ERROR",
+  "REMOTE_TIMEOUT",
+  "PLUGIN_EXECUTION_ERROR",
+  "AUDIT_WRITE_FAILED"
+]);
+
+export const pluginSchema = z.object({
+  id: pluginIdSchema,
+  name: z.string().min(1),
+  version: z.string().min(1),
+  type: z.enum(["web_content", "api", "custom"]),
+  description: z.string(),
+  enabled: z.boolean(),
+  config: z.record(z.unknown()).default({}),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional()
+});
+
+export const pluginToolSchema = z.object({
+  id: z.string().min(1),
+  pluginId: pluginIdSchema,
+  name: pluginToolNameSchema,
+  description: z.string().min(1),
+  inputSchema: z.record(z.unknown()),
+  effect: toolEffectSchema,
+  requiresConfirmation: z.boolean(),
+  credentialRefs: z.array(z.string().min(1)).default([]),
+  operation: pluginToolOperationSchema.optional(),
+  enabled: z.boolean()
+});
+
+export const credentialSchema = z.object({
+  id: z.string().min(1),
+  pluginId: pluginIdSchema,
+  requirementId: z.string().min(1).optional(),
+  name: z.string().min(1),
+  type: credentialTypeSchema,
+  secretRef: z.string().min(1),
+  scope: z.string().optional(),
+  createdAt: z.string().datetime().optional(),
+  updatedAt: z.string().datetime().optional()
+});
+
+export const auditRecordSchema = z.object({
+  id: z.string().min(1),
+  requestId: z.string().min(1),
+  pluginId: pluginIdSchema,
+  toolName: pluginToolNameSchema,
+  effect: toolEffectSchema,
+  status: auditStatusSchema,
+  target: z.string().optional(),
+  inputSummary: z.record(z.unknown()).optional(),
+  statusCode: z.number().int().positive().optional(),
+  durationMs: z.number().nonnegative().optional(),
+  errorCode: z.string().optional(),
+  errorMessage: z.string().optional(),
+  timestamp: z.string().datetime()
+});
+
+export const pluginCredentialRequirementSchema = z.object({
+  id: z.string().min(1),
+  type: credentialTypeSchema,
+  description: z.string().optional()
+});
+
+export const pluginToolDefinitionSchema = z.object({
+  name: pluginToolNameSchema,
+  description: z.string().min(1),
+  inputSchema: z.record(z.unknown()),
+  effect: toolEffectSchema,
+  requiresConfirmation: z.boolean().optional(),
+  credentialRefs: z.array(z.string().min(1)).default([]),
+  operation: pluginToolOperationSchema.optional()
+});
+
+export const pluginManifestSchema = z
+  .object({
+    id: pluginIdSchema,
+    name: z.string().min(1),
+    version: z.string().min(1),
+    type: z.enum(["web_content", "api", "custom"]),
+    description: z.string(),
+    configSchema: z.record(z.unknown()).optional(),
+    credentials: z.array(pluginCredentialRequirementSchema).default([]),
+    tools: z.array(pluginToolDefinitionSchema).default([])
+  })
+  .superRefine((manifest, context) => {
+    const seenTools = new Set<string>();
+    const credentialIds = new Set(manifest.credentials.map((credential) => credential.id));
+    for (const [index, tool] of manifest.tools.entries()) {
+      if (seenTools.has(tool.name)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `Duplicate tool name ${tool.name}`,
+          path: ["tools", index, "name"]
+        });
+      }
+      seenTools.add(tool.name);
+      for (const [credentialIndex, credentialRef] of tool.credentialRefs.entries()) {
+        if (!credentialIds.has(credentialRef)) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: `Unknown credential reference ${credentialRef}`,
+            path: ["tools", index, "credentialRefs", credentialIndex]
+          });
+        }
+      }
+    }
+  });
