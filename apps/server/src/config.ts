@@ -7,6 +7,8 @@ export interface ServerConfig {
   fetchTimeoutMs: number;
   fetchRateLimitPerMinute: number;
   requestLogging: boolean;
+  sampleAdminApiBaseUrl?: string;
+  sampleAdminApiTokenEnv: string;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
@@ -19,6 +21,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     databaseUrl: env.DATABASE_URL,
     fetchTimeoutMs: Number(env.FETCH_TIMEOUT_MS ?? 10000),
     fetchRateLimitPerMinute: Number(env.FETCH_RATE_LIMIT_PER_MINUTE ?? 60),
-    requestLogging: env.REQUEST_LOGGING !== "false"
+    requestLogging: env.REQUEST_LOGGING !== "false",
+    sampleAdminApiBaseUrl: env.SAMPLE_ADMIN_API_BASE_URL,
+    sampleAdminApiTokenEnv: env.SAMPLE_ADMIN_API_TOKEN_ENV ?? "SAMPLE_ADMIN_API_TOKEN"
   };
 }

@@ -9,9 +9,12 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@mcphub/audit": "workspace:*",
+    "@mcphub/credentials": "workspace:*",
     "@mcphub/core": "workspace:*",
     "@mcphub/db": "workspace:*",
     "@mcphub/extractors": "workspace:*",
-    "@mcphub/mcp": "workspace:*"
+    "@mcphub/mcp": "workspace:*",
+    "@mcphub/plugins": "workspace:*"
   }
 }

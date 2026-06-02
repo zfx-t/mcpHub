@@ -4,10 +4,16 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { detectSource, detectSiteRequestSchema } from "@mcphub/core";
 import type { McpHubRepository } from "@mcphub/db";
 import { createSdkMcpServer } from "@mcphub/mcp";
+import type { PlatformGatewayOptions } from "@mcphub/mcp";
 import type { ExtractionService } from "@mcphub/extractors";
 import type { ServerConfig } from "./config.js";
 
-export function createApp(input: { repository: McpHubRepository; extraction: ExtractionService; config: ServerConfig }) {
+export function createApp(input: {
+  repository: McpHubRepository;
+  extraction: ExtractionService;
+  config: ServerConfig;
+  platform?: PlatformGatewayOptions;
+}) {
   const app = Fastify({
     logger: input.config.requestLogging ? { level: "info" } : false,
     genReqId: () => randomUUID()
@@ -46,7 +52,7 @@ export function createApp(input: { repository: McpHubRepository; extraction: Ext
   });
 
   app.all("/mcp", async (request, reply) => {
-    const server = createSdkMcpServer(input.repository, input.extraction);
+    const server = createSdkMcpServer(input.repository, input.extraction, input.platform);
     const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined });
     await server.connect(transport);
     await transport.handleRequest(request.raw, reply.raw, request.body);

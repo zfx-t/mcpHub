@@ -1,6 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import { afterEach, describe, expect, it } from "vitest";
+import { AuditLogger } from "@mcphub/audit";
+import { EnvironmentCredentialStore } from "@mcphub/credentials";
 import { createSeedRepository } from "@mcphub/db";
 import { ExtractionService, FixtureFetcher } from "@mcphub/extractors";
+import { PluginRegistry, pluginRecordFromManifest, pluginToolsFromManifest, sampleAdminPlugin } from "@mcphub/plugins";
 import { WebMcpGateway } from "./index.js";
 
 const fixtureHtml = `
@@ -9,6 +13,15 @@ const fixtureHtml = `
     <body><article><h1>Hello MCP</h1><p>${"Gateway article content. ".repeat(20)}</p></article></body>
   </html>
 `;
+
+let server: Server | undefined;
+
+afterEach(async () => {
+  if (server) {
+    await new Promise<void>((resolve, reject) => server?.close((error) => (error ? reject(error) : resolve())));
+    server = undefined;
+  }
+});
 
 describe("WebMcpGateway", () => {
   it("lists and reads sources", async () => {
@@ -34,4 +47,77 @@ describe("WebMcpGateway", () => {
       expect.objectContaining({ text: expect.stringContaining("Hello MCP") })
     ]);
   });
+
+  it("aggregates API plugin tools, executes read calls, blocks dangerous calls, and exposes audit resources", async () => {
+    let disableCalls = 0;
+    const baseUrl = await startFixtureServer(async (request, response) => {
+      if (request.url?.startsWith("/api/users") && request.method === "GET") {
+        response.setHeader("Content-Type", "application/json");
+        response.end(JSON.stringify({ users: [{ id: "user-1", name: "Ada" }], authorization: request.headers.authorization }));
+        return;
+      }
+      if (request.url?.startsWith("/api/users/user-1/disable")) {
+        disableCalls += 1;
+        response.statusCode = 204;
+        response.end();
+        return;
+      }
+      response.statusCode = 404;
+      response.end("not found");
+    });
+    const repo = createSeedRepository();
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(sampleAdminPlugin), config: { baseUrl } });
+    for (const tool of pluginToolsFromManifest(sampleAdminPlugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    await repo.upsertCredential({
+      id: "cred_sample_admin_token",
+      pluginId: "sample-admin",
+      requirementId: "admin-token",
+      name: "Sample admin token",
+      type: "bearer",
+      secretRef: "env:ADMIN_TOKEN"
+    });
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      registry: new PluginRegistry([sampleAdminPlugin]),
+      credentialStore: new EnvironmentCredentialStore({ env: { ADMIN_TOKEN: "secret-token" } }),
+      auditLogger: new AuditLogger({ repository: repo })
+    });
+
+    expect(gateway.listTools()).toEqual(expect.arrayContaining([expect.objectContaining({ name: "admin.users.list" })]));
+    await expect(gateway.readResource("mcphub://plugins/sample-admin/tools")).resolves.toEqual([
+      expect.objectContaining({ text: expect.stringContaining("admin.users.disable") })
+    ]);
+
+    const listResult = JSON.parse((await gateway.callTool("admin.users.list", { page: 1 }))[0].text) as {
+      ok: boolean;
+      data: { users: Array<{ id: string }>; authorization: string };
+    };
+    expect(listResult).toMatchObject({
+      ok: true,
+      data: { users: [{ id: "user-1" }], authorization: "Bearer secret-token" }
+    });
+
+    const disableResult = JSON.parse((await gateway.callTool("admin.users.disable", { id: "user-1" }))[0].text) as {
+      ok: boolean;
+      error: { code: string };
+    };
+    expect(disableResult).toMatchObject({ ok: false, error: { code: "CONFIRMATION_REQUIRED" } });
+    expect(disableCalls).toBe(0);
+    await expect(gateway.readResource("mcphub://audit/recent")).resolves.toEqual([
+      expect.objectContaining({ text: expect.stringContaining("CONFIRMATION_REQUIRED") })
+    ]);
+  });
 });
+
+async function startFixtureServer(handler: (request: IncomingMessage, response: ServerResponse) => void | Promise<void>): Promise<string> {
+  server = createServer((request, response) => {
+    void handler(request, response);
+  });
+  await new Promise<void>((resolve) => server?.listen(0, "127.0.0.1", resolve));
+  const address = server.address();
+  if (!address || typeof address === "string") {
+    throw new Error("Fixture server did not bind to a TCP port.");
+  }
+  return `http://127.0.0.1:${address.port}`;
+}

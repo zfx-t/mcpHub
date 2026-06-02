@@ -15,8 +15,13 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@mcphub/api-connector": "workspace:*",
+    "@mcphub/audit": "workspace:*",
     "@mcphub/core": "workspace:*",
+    "@mcphub/credentials": "workspace:*",
     "@mcphub/db": "workspace:*",
-    "@mcphub/extractors": "workspace:*"
+    "@mcphub/extractors": "workspace:*",
+    "@mcphub/plugins": "workspace:*",
+    "@mcphub/policy": "workspace:*"
   }
 }
