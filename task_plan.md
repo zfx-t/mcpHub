@@ -102,8 +102,17 @@
 - [x] 确认 dangerous policy：支持 `block`、`auditOnly`、`allow`，默认 `auditOnly`
 - [x] 写入 `docs/superpowers/specs/2026-06-03-local-plugin-loading-design.md`
 - [x] 自检设计文档占位符、范围、矛盾和歧义
-- [ ] 用户审阅本地插件加载设计文档
-- [ ] 用户确认后进入实施计划
+- [x] 用户审阅本地插件加载设计文档
+- [x] 用户确认后进入实施计划
+- **状态：** complete
+
+### 阶段 13：本地插件加载 P1 实施计划
+- [x] 恢复 P0 平台实现和 P1 设计上下文
+- [x] 检查现有配置、平台装配、插件 SDK、策略引擎、MCP Gateway 和 smoke 测试接缝
+- [x] 写入 `docs/superpowers/plans/2026-06-03-local-plugin-loading-implementation-plan.md`
+- [x] 自检实施计划覆盖配置、loader、repository、policy、MCP、audit、smoke、Docker 和文档
+- [ ] 用户审阅本地插件加载实施计划
+- [ ] 用户确认后进入代码实现
 - **状态：** in_progress
 
 ## 关键问题
@@ -138,6 +147,8 @@
 | 平台化 P0 核心代码已实现 | 新增插件 SDK、API Connector、Credential Store、Policy、Audit、MCP 聚合和样例 Admin API 插件 |
 | 平台化 P0 端到端验证已完成 | 本地 smoke 和 Docker Compose plugin smoke 均覆盖 sample admin read/dangerous/audit |
 | 本地插件加载 P1 方向已确认 | 用户确认不优先做危险操作确认 UI，下一阶段做本地插件加载，并将 dangerous policy 改为可配置 |
+| 本地插件加载 P1 设计文档已获批 | 用户确认设计文档没有问题，并要求继续进入实施计划 |
+| 本地插件加载 P1 实施计划已写入 | `docs/superpowers/plans/2026-06-03-local-plugin-loading-implementation-plan.md` |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |

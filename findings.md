@@ -86,6 +86,9 @@
 | Dangerous 操作默认阻断 | `admin.users.disable` 在无确认 token 时返回 `CONFIRMATION_REQUIRED`，connector 不会调用远端 fixture，审计记录保留 blocked evidence |
 | P1 不优先实现 server-owned dangerous confirmation UI | 用户认为外部 MCP client/agent host 通常已有工具审批机制；MCPHub 应保留 effect 元数据和 audit，但 dangerous 执行策略应可配置 |
 | 本地插件加载是下一阶段地基 | 用户认可通过 `MCPHUB_PLUGIN_DIR` 加载预编译 JS 插件和 `plugin.config.json`，使 MCPHub 从内置 sample plugin 走向用户自定义插件 |
+| 本地插件加载实施接缝清晰 | 当前 `apps/server/src/platform.ts` 只装配 sample admin；P1 可在此组合本地 loader、registry、credential store、audit logger 和 per-plugin policy |
+| P1 策略变化集中在 policy 与 gateway | 当前 `packages/policy/src/engine.ts` 对 dangerous 固定返回 `CONFIRMATION_REQUIRED`；P1 需要让 `auditOnly/allow` 能继续执行 connector 并记录审计证据 |
+| 本地插件 smoke 适合复用现有脚本 | `scripts/smoke.ts` 已覆盖 fixture REST、MCP `tools/list`、tool call、dangerous block 和 audit，可扩展为 temp-dir local plugin 验证 |
 
 ## 平台化演进草案
 

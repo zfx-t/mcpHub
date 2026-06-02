@@ -216,5 +216,25 @@
 | 我学到了什么？ | 见 findings.md |
 | 我做了什么？ | 见上方记录 |
 
+### 阶段 13：本地插件加载 P1 实施计划
+- **状态：** in_progress
+- **开始时间：** 2026-06-03 CST
+- 执行的操作：
+  - 用户确认 `docs/superpowers/specs/2026-06-03-local-plugin-loading-design.md` 没有问题，并要求继续进入实施计划。
+  - 读取 P0 平台实施计划、P1 设计文档、当前规划文件和 Git 状态。
+  - 检查当前实现接缝：
+    - `apps/server/src/config.ts` 尚未读取 `MCPHUB_PLUGIN_DIR`。
+    - `apps/server/src/platform.ts` 当前只在 `SAMPLE_ADMIN_API_BASE_URL` 存在时装配 sample admin plugin。
+    - `packages/plugins/src/sdk.ts` 已提供 `definePlugin` 和 `defineApiTool`，可作为本地插件模块契约。
+    - `packages/policy/src/engine.ts` 当前对 dangerous 工具固定返回 `CONFIRMATION_REQUIRED`。
+    - `packages/mcp/src/gateway.ts` 已能通过 registry、credential store、policy 和 audit 执行 API plugin tool。
+    - `scripts/smoke.ts` 已覆盖 fixture REST、sample admin plugin、dangerous block 和 audit，可扩展本地插件 smoke。
+  - 创建 `docs/superpowers/plans/2026-06-03-local-plugin-loading-implementation-plan.md`。
+  - 将实施拆分为 Phase 0-11：baseline、配置、config schema、filesystem loader、repository seeding、platform composition、dangerous policy、MCP/audit、smoke、Docker、文档和最终验证。
+  - 完成实施计划自检：未发现真实占位符；范围聚焦 P1 本地插件加载，包含验收标准、风险缓解和延后范围。
+- 下一步：
+  - 用户审阅实施计划。
+  - 用户确认后再进入代码实现。
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*
