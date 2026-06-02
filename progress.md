@@ -2,6 +2,25 @@
 
 ## 会话：2026-06-01
 
+### 阶段 12：本地插件加载 P1 设计
+- **状态：** in_progress
+- **开始时间：** 2026-06-03 CST
+- 执行的操作：
+  - 使用 `$brainstorming` 与 `$planning-with-files-zh` 继续后续工作规划。
+  - 恢复当前规划文件和 Git 状态：`develope` 与 `origin/develope` 对齐，平台化 P0 已完成并推送。
+  - 与用户确认：暂不优先实现 server-owned dangerous confirmation UI，因为外部 MCP client/agent host 通常负责工具调用审批。
+  - 推荐下一阶段主线：Local Plugin Loading P1，让 MCPHub 从本地目录加载用户预编译 JS 插件。
+  - 用户确认推荐方案：通过 `MCPHUB_PLUGIN_DIR` 加载插件目录，每个插件包含 `index.js` 和 `plugin.config.json`。
+  - 用户确认 dangerous policy 行为：支持 `block`、`auditOnly`、`allow`，默认 `auditOnly`。
+  - 用户确认数据模型、MCP 暴露内容、错误处理、测试和验收标准。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-03-local-plugin-loading-design.md`。
+  - 完成设计文档自检：未发现 `TBD`、`TODO`、占位符；范围聚焦 P1 本地插件加载，未混入 OpenAPI/UI/市场等 P2 内容。
+- 创建/修改的文件：
+  - `docs/superpowers/specs/2026-06-03-local-plugin-loading-design.md`
+  - `task_plan.md`
+  - `progress.md`
+  - `findings.md`
+
 ### 阶段 9：平台化目标重构与新设计探索
 - **状态：** in_progress
 - **开始时间：** 2026-06-02 12:20 CST

@@ -84,6 +84,8 @@
 | API tool REST 元数据需要持久契约 | `defineApiTool()` 的 method/path 不能只作为 helper 返回值，已落到 `PluginTool.operation` 并由 schema/repository/MCP gateway 保留 |
 | 凭证引用需要区分 requirement 和 record | manifest 中的 `credentialRefs` 表示 requirementId；DB credential record 新增 `requirementId`，通过 `(pluginId, requirementId)` 解析到 secretRef |
 | Dangerous 操作默认阻断 | `admin.users.disable` 在无确认 token 时返回 `CONFIRMATION_REQUIRED`，connector 不会调用远端 fixture，审计记录保留 blocked evidence |
+| P1 不优先实现 server-owned dangerous confirmation UI | 用户认为外部 MCP client/agent host 通常已有工具审批机制；MCPHub 应保留 effect 元数据和 audit，但 dangerous 执行策略应可配置 |
+| 本地插件加载是下一阶段地基 | 用户认可通过 `MCPHUB_PLUGIN_DIR` 加载预编译 JS 插件和 `plugin.config.json`，使 MCPHub 从内置 sample plugin 走向用户自定义插件 |
 
 ## 平台化演进草案
 

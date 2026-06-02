@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 11：平台化 P0 代码实现与验证完成
+阶段 12：本地插件加载 P1 设计文档审阅
 
 ## 各阶段
 
@@ -95,6 +95,17 @@
 - [x] Phase 11：全量验证、Docker Compose 复测
 - **状态：** complete
 
+### 阶段 12：本地插件加载 P1 设计
+- [x] 恢复当前平台化 P0 状态和 Git 状态
+- [x] 明确下一阶段主线：本地插件加载系统，不做 server-owned dangerous confirmation UI
+- [x] 讨论并确认方案：通过 `MCPHUB_PLUGIN_DIR` 加载预编译 JS 插件和 `plugin.config.json`
+- [x] 确认 dangerous policy：支持 `block`、`auditOnly`、`allow`，默认 `auditOnly`
+- [x] 写入 `docs/superpowers/specs/2026-06-03-local-plugin-loading-design.md`
+- [x] 自检设计文档占位符、范围、矛盾和歧义
+- [ ] 用户审阅本地插件加载设计文档
+- [ ] 用户确认后进入实施计划
+- **状态：** in_progress
+
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
 2. MCP 输出应以 resources 为主、tools 为主，还是二者结合？已回答：Resources + Tools 组合。
@@ -126,6 +137,7 @@
 | 平台化实施计划已写入 | `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md` |
 | 平台化 P0 核心代码已实现 | 新增插件 SDK、API Connector、Credential Store、Policy、Audit、MCP 聚合和样例 Admin API 插件 |
 | 平台化 P0 端到端验证已完成 | 本地 smoke 和 Docker Compose plugin smoke 均覆盖 sample admin read/dangerous/audit |
+| 本地插件加载 P1 方向已确认 | 用户确认不优先做危险操作确认 UI，下一阶段做本地插件加载，并将 dangerous policy 改为可配置 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
