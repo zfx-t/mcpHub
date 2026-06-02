@@ -27,6 +27,39 @@
   - `findings.md`
   - `progress.md`
 
+### 阶段 10：平台化 P0 核心实现
+- **状态：** complete
+- **开始时间：** 2026-06-02 15:53 CST
+- 执行的操作：
+  - 使用 `$executing-plans` 与 `$subagent-driven-development` 继续执行平台化实施计划。
+  - 运行阶段 1-3 既有实现的完整基线：`pnpm test` 通过 7 个测试文件、28 个测试；`pnpm typecheck` 通过。
+  - 新增 `@mcphub/api-connector`：JSON REST 执行、path/query/header/body 映射、bearer/header key/query key/basic/cookie/env 凭证注入、timeout、远端错误、URL/输入脱敏。
+  - 新增 `@mcphub/credentials`：环境变量 backed credential store，支持 `env:NAME` 和裸环境变量引用。
+  - 新增 `@mcphub/policy`：read/write/dangerous 策略、工具启用检查、host/method/path 限制、dangerous confirmation-required 结果。
+  - 新增 `@mcphub/audit`：审计记录 helper/logger、recent 查询、写入 repository 时复用 DB redaction。
+  - 修复 API tool durable contract：`defineApiTool()` 生成 `operation: { type: "http", method, path }`，core schema、registry、repository、Postgres 均保留该字段。
+  - 修复凭证引用边界：`Credential.requirementId` 区分 manifest requirement 与 DB credential record，repository 支持 `getCredentialForRequirement(pluginId, requirementId)`。
+  - 调整 audit_records 外键不再 `ON DELETE CASCADE`，避免删除插件时级联删除审计证据。
+  - 新增 `sampleAdminPlugin`，暴露 `admin.users.list` 和 `admin.users.disable`。
+  - 新增 server platform bootstrap：通过 `SAMPLE_ADMIN_API_BASE_URL`、`SAMPLE_ADMIN_API_TOKEN_ENV`、`SAMPLE_ADMIN_API_TOKEN` 显式启用 sample admin plugin，并向 repository 写入 plugin/tool/credential metadata。
+  - 扩展 MCP Gateway：可选聚合 plugin registry，新增 `mcphub://plugins`、`mcphub://plugins/{pluginId}`、`mcphub://plugins/{pluginId}/tools`、`mcphub://audit/recent`，并让 API plugin tool 走 policy -> credentials -> connector -> audit。
+  - 扩展官方 SDK MCP transport：平台插件 tools 会注册到 `tools/list`，并通过同一个 `gateway.callTool()` 路径执行；JSON Schema 会转换为 Zod shape，避免 SDK transport 丢弃 tool 参数。
+  - 新增管理后台 fixture 测试：`admin.users.list` 通过 MCP 调用远端 fixture；`admin.users.disable` 无 confirmation 时返回 `CONFIRMATION_REQUIRED` 且远端未被调用，audit 可读取 blocked 记录。
+  - 扩展 `scripts/smoke.ts`：覆盖 server startup、Web resource read、plugin resource、tools/list、`admin.users.list`、`admin.users.disable` 阻断、audit recent。
+  - 新增 `scripts/admin-fixture.ts` 和 `pnpm fixture:admin`，用于 Docker Compose sample admin plugin smoke。
+  - 删除 `packages/core/src` 下旧 TypeScript 编译生成物，避免测试加载旧 JS。
+  - 更新 README 和 `.env.example`，补充平台资源、API 插件示例、环境变量凭证、sample admin plugin 配置和 dangerous 工具行为。
+- 当前验证：
+  - Focused tests：`apps/server`、`packages/mcp`、`packages/core/db/plugins/credentials/policy/api-connector/audit` 相关测试通过。
+  - `pnpm test`：11 个测试文件、48 个测试通过。
+  - `pnpm lint`：通过。
+  - `pnpm build`：通过。
+  - `pnpm typecheck`：通过。
+  - `pnpm test:e2e`：`Smoke test passed`。
+  - `SAMPLE_ADMIN_API_BASE_URL=http://host.docker.internal:4001 SAMPLE_ADMIN_API_TOKEN=secret-token docker compose up --build -d server`：server 与 postgres 启动成功。
+  - 容器插件 smoke：`/healthz`、`mcphub://plugins`、`tools/list` 包含 sample admin tools、`admin.users.list` 成功调用 host fixture、`admin.users.disable` 返回 `CONFIRMATION_REQUIRED`、host fixture `disableCalls` 保持 0、`mcphub://audit/recent` 包含 blocked call、`inputSummary.id=user-1` 和正确 target。
+- 完成时间：2026-06-02 18:31 CST
+
 ### 阶段 1：上下文与需求发现
 - **状态：** complete
 - **开始时间：** 2026-06-01 15:01 Asia/Shanghai

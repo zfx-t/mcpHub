@@ -80,6 +80,10 @@
 | 平台化设计文档已落盘 | `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md` 定义平台目标、插件模型、API-to-MCP 映射、凭据、策略、审计、迁移和验收标准 |
 | 平台化设计文档已获批 | 用户确认设计文档没有问题并要求继续 |
 | 平台化实施计划已落盘 | `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md` 拆分 Phase 0-11，覆盖平台模型、存储、插件 SDK、API Connector、凭据、策略、审计、MCP 聚合、样例插件、文档和端到端验证 |
+| 平台化 P0 核心能力已实现 | 新增 `@mcphub/plugins`、`@mcphub/api-connector`、`@mcphub/credentials`、`@mcphub/policy`、`@mcphub/audit`，并扩展 `@mcphub/core/db/mcp` |
+| API tool REST 元数据需要持久契约 | `defineApiTool()` 的 method/path 不能只作为 helper 返回值，已落到 `PluginTool.operation` 并由 schema/repository/MCP gateway 保留 |
+| 凭证引用需要区分 requirement 和 record | manifest 中的 `credentialRefs` 表示 requirementId；DB credential record 新增 `requirementId`，通过 `(pluginId, requirementId)` 解析到 secretRef |
+| Dangerous 操作默认阻断 | `admin.users.disable` 在无确认 token 时返回 `CONFIRMATION_REQUIRED`，connector 不会调用远端 fixture，审计记录保留 blocked evidence |
 
 ## 平台化演进草案
 

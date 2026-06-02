@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 10：平台化实施计划审阅
+阶段 11：平台化 P0 代码实现与验证完成
 
 ## 各阶段
 
@@ -77,9 +77,23 @@
 - [x] 根据平台化设计文档拆分实施阶段
 - [x] 写入 `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md`
 - [x] 自检实施计划覆盖 P0 验收标准、风险和测试策略
-- [ ] 用户审阅平台化实施计划
-- [ ] 用户确认后进入平台化代码实现
-- **状态：** in_progress
+- [x] 用户审阅平台化实施计划
+- [x] 用户确认后进入平台化代码实现
+- **状态：** complete
+
+### 阶段 11：平台化 P0 代码实现与验证
+- [x] Phase 1：平台领域模型和 schema
+- [x] Phase 2：数据库 schema、Memory/Postgres repository 扩展
+- [x] Phase 3：插件 SDK、Registry、内置 Web 插件 manifest
+- [x] Phase 4：API Connector，覆盖 JSON REST、auth 注入、timeout、错误和脱敏
+- [x] Phase 5：环境变量凭证解析和 requirementId 绑定
+- [x] Phase 6：策略引擎，覆盖 read/write/dangerous、host/method/path 限制
+- [x] Phase 7：审计 logger 和审计资源数据
+- [x] Phase 8：MCP Gateway 聚合插件工具和平台资源
+- [x] Phase 9：样例 Admin API plugin
+- [x] Phase 10：README 更新
+- [x] Phase 11：全量验证、Docker Compose 复测
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
@@ -110,6 +124,8 @@
 | 平台化设计文档已写入 | `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md` |
 | 平台化设计文档已获用户批准 | 用户审阅后确认没有问题，可以继续 |
 | 平台化实施计划已写入 | `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md` |
+| 平台化 P0 核心代码已实现 | 新增插件 SDK、API Connector、Credential Store、Policy、Audit、MCP 聚合和样例 Admin API 插件 |
+| 平台化 P0 端到端验证已完成 | 本地 smoke 和 Docker Compose plugin smoke 均覆盖 sample admin read/dangerous/audit |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
@@ -120,6 +136,9 @@
 | `docker build -t mcphub:dev .` 拉取基础镜像超时 | 2 | 后续网络恢复后完成构建；发现并修复 Dockerfile 中 `corepack` 缺失问题 |
 | Docker server 启动后 seed 写入 JSONB 失败 | 1 | `pg` 参数写入 JSONB 前统一 `JSON.stringify` |
 | Docker `source.refresh` 对旧 seed URL 返回 404 | 1 | 将示例刷新 URL 改为 `https://example.com/`，并增加 custom route 正文 fallback |
+| API tool 的 method/path 被 Zod 剥离 | 1 | 将 HTTP operation 提升为 core schema 的 durable `PluginTool.operation` |
+| Docker runtime 找不到平台 workspace 包 | 1 | 将 `@mcphub/audit`、`@mcphub/credentials`、`@mcphub/plugins` 加入 `apps/server` runtime dependencies |
+| SDK MCP transport 会丢弃平台工具参数 | 1 | 将插件 JSON Schema 转成 Zod shape 注册到 SDK tool，保留 `id/page/query` 等参数 |
 
 ## 备注
 - 外部网页和规范内容只写入 findings.md，不写入 task_plan.md。
