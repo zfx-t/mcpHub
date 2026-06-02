@@ -17,6 +17,7 @@
       "@mcphub/db": ["packages/db/src/index.ts"],
       "@mcphub/extractors": ["packages/extractors/src/index.ts"],
       "@mcphub/plugins": ["packages/plugins/src/index.ts"],
+      "@mcphub/plugins/local-loader": ["packages/plugins/src/local-loader.ts"],
       "@mcphub/policy": ["packages/policy/src/index.ts"],
       "@mcphub/mcp": ["packages/mcp/src/index.ts"]
     },

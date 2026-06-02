@@ -8,6 +8,10 @@
     ".": {
       "types": "./src/index.ts",
       "import": "./dist/index.js"
+    },
+    "./local-loader": {
+      "types": "./src/local-loader.ts",
+      "import": "./dist/local-loader.js"
     }
   },
   "scripts": {
