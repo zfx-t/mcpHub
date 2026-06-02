@@ -2,6 +2,27 @@
 
 ## 会话：2026-06-01
 
+### 阶段 9：平台化目标重构与新设计探索
+- **状态：** in_progress
+- **开始时间：** 2026-06-02 12:20 CST
+- 执行的操作：
+  - 读取 `$brainstorming` 和 `$planning-with-files-zh` 技能说明。
+  - 确认当前分支为 `develope`，且 `origin/develope` 已指向最新 Docker 修复提交 `13def5e`。
+  - 读取 `task_plan.md`、`findings.md`、`progress.md` 和现有 Web-to-MCP 设计文档。
+  - 识别目标升级：从“网页内容转 MCP”扩展为“广泛网站/服务/API/后台能力通过插件适配成 MCP”。
+  - 记录当前 MVP 与新目标差距：缺少通用插件运行时、REST/OpenAPI 适配、鉴权、权限策略、审计和操作确认。
+  - 形成平台化演进草案：比较 API-first、Web-first、分层通用平台三种路线，并建议 P0 采用 API-first 插件能力 + 保留 Web 内容能力。
+  - 向用户展示 MCPHub 平台化设计草案 v0：分层通用平台、P0 REST/API 插件适配、保留 Web 内容插件、增加插件运行时/凭据/策略/审计。
+  - 当前处于设计确认门槛：等待用户确认是否采用“分层通用平台，P0 先做 REST/API 插件适配，同时保留 Web 内容插件”的方向；确认前不写正式设计文档、不进入代码实现。
+  - 用户确认平台化方向，并要求继续。
+  - 写入 `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md`。
+  - 自检平台化设计文档：未发现 TODO/TBD 占位符；P0/P1/P2 边界、危险操作阻断、插件信任边界和现有 MVP 迁移路径已明确。
+- 创建/修改的文件：
+  - `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md`
+  - `task_plan.md`
+  - `findings.md`
+  - `progress.md`
+
 ### 阶段 1：上下文与需求发现
 - **状态：** complete
 - **开始时间：** 2026-06-01 15:01 Asia/Shanghai

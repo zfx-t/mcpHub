@@ -9,6 +9,8 @@
 - 用户进一步收窄插件职责：插件不负责标注、不负责抓取，只把网站等信息发送给服务器，并展示服务端返回结果。
 - 用户选择 MCP 暴露方式为 Resources + Tools 组合。
 - 用户选择部署形态为服务端部署：可由用户自部署，也可使用公开网络服务，并由用户配置到 Agent。
+- 用户进一步澄清长期目标：MCPHub 不应只做网页内容抽取，而应成为通用 MCP 中间件平台，让不支持 MCP 的网站服务、管理后台、REST API、网页功能和自定义代码插件都能被适配成 AI 可使用的 MCP Resources/Tools。
+- 用户给出的关键用例：已有管理后台网站和 RESTful API 文档，不修改原系统，通过 MCPHub 中自己编辑的插件代码，把后台管理能力暴露成 MCP 接口给 AI 使用。
 
 ## 项目上下文发现
 - 工作目录：`/home/zfxt/formyself/mcpHub`
@@ -73,6 +75,47 @@
 | 最终验证通过 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 最终重跑均通过 |
 | Docker Compose 端到端验证通过 | `/healthz`、`/api/detect-site`、MCP `resources/list`、`source.refresh`、item `resources/read`、`debug.explain` 均通过 |
 | PostgreSQL JSONB 写入需要显式序列化 | `pg` 直接传数组/对象到 JSONB 时触发 `invalid input syntax for type json`，已在 `PostgresRepository` 中统一处理 |
+| 当前 MVP 与新目标存在范围差距 | 现有实现偏 Web 内容抽取与缓存，已具备 MCP Gateway/Tools/Resources/存储/Docker 底座，但缺少通用插件运行时、API-to-MCP 适配、鉴权、权限策略、审计和危险操作确认 |
+| 平台化方向已获用户确认 | 用户确认继续采用“分层通用平台，P0 REST/API 插件适配 + 保留 Web 内容插件”路线 |
+| 平台化设计文档已落盘 | `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md` 定义平台目标、插件模型、API-to-MCP 映射、凭据、策略、审计、迁移和验收标准 |
+
+## 平台化演进草案
+
+### 新目标抽象
+MCPHub 应从单一 Web 内容抽取服务升级为通用 MCP 适配平台。平台核心职责不是替代原网站或后台服务，而是在不修改原系统的前提下，通过插件、适配器和配置，把现有网站服务能力转换为 AI 可发现、可校验、可审计调用的 MCP Resources 和 Tools。
+
+### 能力边界
+| 能力 | 说明 | 优先级建议 |
+|------|------|------------|
+| REST/OpenAPI to MCP | 将已有 REST API、OpenAPI/Swagger/Postman 文档或手写插件映射成 MCP Tools | P0 |
+| Web Content to MCP | 保留现有网页内容抽取、缓存、刷新、诊断能力 | P0 |
+| Plugin Runtime | 支持用户编写插件注册 tools/resources、配置鉴权、执行请求 | P0 |
+| Credential 管理 | 保存 API token、cookie、basic auth、headers、环境变量引用 | P0 |
+| 权限与安全策略 | 区分只读/写入/危险操作，支持二次确认、禁用、scope 限制 | P0 |
+| 审计日志 | 记录 AI 调用了哪个 tool、参数摘要、目标服务、结果、错误 | P0 |
+| 网页自动化适配 | 对无 API 的网站通过浏览器自动化执行操作 | P2，风险和复杂度高 |
+| 公共插件市场 | 分享和审核第三方适配器 | P2，需先有安全模型 |
+
+### 三种可选架构
+| 方案 | 内容 | 优点 | 代价 |
+|------|------|------|------|
+| API-first 插件平台 | 先做 REST/OpenAPI + 自定义代码插件，把后台接口映射为 MCP Tools | 最贴合管理后台用例，安全边界清晰，易测试 | 暂不能覆盖无 API 网站操作 |
+| Web-first 广覆盖平台 | 继续强化网页抽取和浏览器插件，尽量覆盖普通网站内容 | 延续现有 MVP，变化小 | 不足以支撑后台管理类操作 |
+| 分层通用平台 | 统一 Plugin Runtime，第一层 REST/API 插件，第二层 Web 内容插件，第三层网页自动化插件 | 长期最符合“广泛不支持 MCP 服务转 MCP”目标 | 设计工作更重，需要明确 P0/P1/P2 |
+
+### 推荐路线
+推荐采用“分层通用平台”，但 P0 只实现 API-first 插件能力和保留现有 Web 内容能力。这样既不丢掉当前 MVP，又能立刻覆盖用户的管理后台/REST API 用例。网页自动化应推迟到安全策略、审计和人工确认机制成熟后再做。
+
+### 建议的 P0 平台模块
+| 模块 | 职责 |
+|------|------|
+| Plugin Registry | 管理插件元信息、启用状态、版本、实例配置 |
+| Plugin Runtime | 加载插件，注册 MCP tools/resources，隔离插件调用上下文 |
+| API Connector | 执行 REST 请求，处理 baseUrl、headers、query、body、timeout、错误 |
+| Auth/Credential Store | 管理 token、api key、cookie、basic auth、环境变量引用 |
+| Tool Policy Engine | 给 tool 标注 read/write/dangerous，控制是否允许 AI 直接调用 |
+| Audit Log | 记录 tool 调用、参数摘要、调用者、状态码、耗时和错误 |
+| Admin/API Plugin SDK | 让用户用代码定义后台 API 到 MCP tool 的映射 |
 
 ## 资源
 - MCP 官方仓库：https://github.com/modelcontextprotocol/modelcontextprotocol

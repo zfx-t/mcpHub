@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-全部完成
+阶段 9：平台化目标重构与新设计探索
 
 ## 各阶段
 
@@ -63,6 +63,16 @@
 - [x] 进行最终完成审计
 - **状态：** complete
 
+### 阶段 9：平台化目标重构与新设计探索
+- [x] 恢复现有 Web-to-MCP 设计、实现和分支上下文
+- [x] 明确当前 MVP 与用户新目标的差距：当前更偏内容抽取，不是通用 API/网站服务 MCP 适配平台
+- [x] 梳理“广泛网站/服务转 MCP”的能力边界
+- [x] 提出 2-3 种平台演进方案并推荐路线
+- [x] 用户确认设计方向后，写入新的平台化设计文档
+- [x] 自检平台化设计文档占位符、范围和歧义
+- [ ] 请求用户审阅平台化设计文档
+- **状态：** in_progress
+
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
 2. MCP 输出应以 resources 为主、tools 为主，还是二者结合？已回答：Resources + Tools 组合。
@@ -87,6 +97,9 @@
 | 实施计划已写入 | `docs/superpowers/plans/2026-06-01-web-to-mcp-implementation-plan.md` |
 | MVP 实现已完成本地验证 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 均通过 |
 | Docker Compose 端到端验证已通过 | server + postgres 启动成功；health、detector API、MCP resources、`source.refresh`、item read、`debug.explain` 均通过 |
+| 新目标升级为通用 MCPHub 平台 | 用户希望不仅支持网页内容抽取，还能让不支持 MCP 的网站/服务通过平台插件、适配器或自定义代码广泛变成 MCP 可用 |
+| 平台化路线已确认 | 用户确认采用“分层通用平台，P0 先做 REST/API 插件适配，同时保留 Web 内容插件” |
+| 平台化设计文档已写入 | `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md` |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
