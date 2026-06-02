@@ -5,7 +5,7 @@ import { WebMcpGateway } from "./index.js";
 
 const fixtureHtml = `
   <html>
-    <head><title>Hello</title><link rel="canonical" href="https://example.com/articles/hello"></head>
+    <head><title>Hello</title><link rel="canonical" href="https://example.com/"></head>
     <body><article><h1>Hello MCP</h1><p>${"Gateway article content. ".repeat(20)}</p></article></body>
   </html>
 `;
@@ -23,7 +23,7 @@ describe("WebMcpGateway", () => {
 
   it("refreshes sources through tools and reads items", async () => {
     const repo = createSeedRepository();
-    const service = new ExtractionService(repo, new FixtureFetcher({ "https://example.com/articles/hello": fixtureHtml }));
+    const service = new ExtractionService(repo, new FixtureFetcher({ "https://example.com/": fixtureHtml }));
     const gateway = new WebMcpGateway(repo, service);
 
     await gateway.callTool("source.refresh", { sourceId: "src_example_articles", mode: "force" });

@@ -40,7 +40,7 @@ describe("server app", () => {
       extraction: new ExtractionService(
         repo,
         new FixtureFetcher({
-          "https://example.com/articles/hello": `<article><h1>Hello MCP</h1><p>${"Content. ".repeat(30)}</p></article>`
+          "https://example.com/": `<article><h1>Hello MCP</h1><p>${"Content. ".repeat(30)}</p></article>`
         })
       ),
       config: loadConfig({ REQUEST_LOGGING: "false" })

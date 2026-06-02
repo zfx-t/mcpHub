@@ -69,7 +69,7 @@ export const seedRules: Rule[] = [
     version: 1,
     urlPattern: "domain:example.com",
     fieldMappings: { title: "h1", content: "article" },
-    sampleUrls: ["https://example.com/articles/hello"],
+    sampleUrls: ["https://example.com/"],
     confidence: 0.95,
     status: "active"
   },

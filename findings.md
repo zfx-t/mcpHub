@@ -61,7 +61,7 @@
 | 当前目录没有可参考的现有实现 | 将从目标架构开始设计 |
 | 规划文件状态落后于 Git 实际状态 | 已将阶段 4 更新为完成，并把当前阶段推进到设计审阅门槛 |
 | 当前尚未确认实施计划技术栈假设 | 在进入代码实现前请用户确认或提出调整 |
-| Docker build 无法完成验证 | Docker daemon 可用，但拉取 `node:25-alpine` 连续两次 Docker Hub 网络超时；Dockerfile 未进入后续构建步骤 |
+| Docker build 网络限制已复测通过 | 后续完成 `docker compose up --build -d server`，server 与 postgres 均启动成功 |
 
 ## 实现发现
 | 发现 | 证据 |
@@ -71,6 +71,8 @@
 | 端到端 smoke 使用真实 HTTP server | `scripts/smoke.ts` 启动 Fastify server 并通过 HTTP 调用 detect API 与 MCP endpoint |
 | MCP gateway 使用官方 SDK transport | `apps/server/src/app.ts` 使用 `StreamableHTTPServerTransport`，`packages/mcp/src/sdk-server.ts` 使用 `McpServer` |
 | 最终验证通过 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 最终重跑均通过 |
+| Docker Compose 端到端验证通过 | `/healthz`、`/api/detect-site`、MCP `resources/list`、`source.refresh`、item `resources/read`、`debug.explain` 均通过 |
+| PostgreSQL JSONB 写入需要显式序列化 | `pg` 直接传数组/对象到 JSONB 时触发 `invalid input syntax for type json`，已在 `PostgresRepository` 中统一处理 |
 
 ## 资源
 - MCP 官方仓库：https://github.com/modelcontextprotocol/modelcontextprotocol

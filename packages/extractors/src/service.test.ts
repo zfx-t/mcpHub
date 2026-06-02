@@ -3,9 +3,9 @@ import { createSeedRepository } from "@mcphub/db";
 import { ExtractionService, FixtureFetcher } from "./index.js";
 
 const fixtures = {
-  "https://example.com/articles/hello": `
+  "https://example.com/": `
     <html>
-      <head><title>Hello</title><link rel="canonical" href="https://example.com/articles/hello"></head>
+      <head><title>Hello</title><link rel="canonical" href="https://example.com/"></head>
       <body><article><h1>Hello MCP</h1><p>${"Useful article content. ".repeat(20)}</p></article></body>
     </html>
   `,

@@ -7,7 +7,7 @@ const articleHtml = `
   <html>
     <head>
       <title>Hello MCP</title>
-      <link rel="canonical" href="https://example.com/articles/hello">
+      <link rel="canonical" href="https://example.com/">
       <meta name="description" content="Smoke test article">
     </head>
     <body>
@@ -23,7 +23,7 @@ const repo = createSeedRepository();
 const extraction = new ExtractionService(
   repo,
   new FixtureFetcher({
-    "https://example.com/articles/hello": articleHtml
+    "https://example.com/": articleHtml
   })
 );
 const app = createApp({

@@ -77,9 +77,9 @@ export class PostgresRepository implements McpHubRepository {
         source.routeKey,
         source.owner,
         source.visibility,
-        source.refreshPolicy,
+        jsonb(source.refreshPolicy),
         source.authRequirement,
-        source.riskFlags,
+        jsonb(source.riskFlags),
         source.healthStatus,
         source.lastSuccessfulRefreshAt,
         source.lastError,
@@ -135,10 +135,10 @@ export class PostgresRepository implements McpHubRepository {
         rule.type,
         rule.version,
         rule.urlPattern,
-        rule.fieldMappings,
-        rule.paginationPolicy,
-        rule.cleaningPolicy,
-        rule.sampleUrls,
+        jsonb(rule.fieldMappings),
+        jsonb(rule.paginationPolicy),
+        jsonb(rule.cleaningPolicy),
+        jsonb(rule.sampleUrls),
         rule.confidence,
         rule.status
       ]
@@ -187,9 +187,9 @@ export class PostgresRepository implements McpHubRepository {
         document.byline,
         document.publishedAt,
         document.fetchedAt,
-        document.sourceRefs,
+        jsonb(document.sourceRefs),
         document.confidence,
-        document.extractionWarnings
+        jsonb(document.extractionWarnings)
       ]
     );
   }
@@ -229,8 +229,8 @@ export class PostgresRepository implements McpHubRepository {
           item.contentRef,
           item.publishedAt,
           item.updatedAt,
-          item.tags,
-          item.entities,
+          jsonb(item.tags),
+          jsonb(item.entities),
           item.readabilityScore,
           item.diffHash
         ]
@@ -288,7 +288,7 @@ export class PostgresRepository implements McpHubRepository {
         record.timestamp,
         record.retryable,
         record.suggestedNextAction,
-        record.details
+        jsonb(record.details)
       ]
     );
   }
@@ -404,4 +404,11 @@ function toIso(value: unknown): string | undefined {
     return value.toISOString();
   }
   return String(value);
+}
+
+function jsonb(value: unknown): string | null {
+  if (value === undefined) {
+    return null;
+  }
+  return JSON.stringify(value);
 }

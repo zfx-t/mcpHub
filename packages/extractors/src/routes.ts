@@ -9,7 +9,9 @@ function articleRoute(routeKey: string, selector: string): CustomRoute {
     async extract(input: ExtractionInput): Promise<ExtractionOutput> {
       const $ = load(input.html);
       const title = $("h1").first().text().trim() || $("title").text().trim() || input.source.name;
-      const body = $(selector).first().text().replace(/\s+/g, " ").trim();
+      const selected = $(selector).first();
+      const contentNode = selected.text().trim() ? selected : $("article, main, body").first();
+      const body = contentNode.text().replace(/\s+/g, " ").trim();
       const canonicalUrl = $("link[rel='canonical']").attr("href") || input.url;
       const documentId = stableId("doc", [routeKey, canonicalUrl, body]);
       const itemId = stableId("item", [routeKey, canonicalUrl, title]);
@@ -20,7 +22,7 @@ function articleRoute(routeKey: string, selector: string): CustomRoute {
         canonicalUrl,
         title,
         contentText: body,
-        contentHtml: $(selector).first().html() || undefined,
+        contentHtml: contentNode.html() || undefined,
         summary: body.slice(0, 280),
         fetchedAt: input.fetchedAt,
         sourceRefs: [input.url],

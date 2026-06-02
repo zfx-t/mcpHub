@@ -86,6 +86,7 @@
 | 设计文档已获用户批准 | 用户审阅后确认没有问题 |
 | 实施计划已写入 | `docs/superpowers/plans/2026-06-01-web-to-mcp-implementation-plan.md` |
 | MVP 实现已完成本地验证 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e` 均通过 |
+| Docker Compose 端到端验证已通过 | server + postgres 启动成功；health、detector API、MCP resources、`source.refresh`、item read、`debug.explain` 均通过 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
@@ -93,8 +94,10 @@
 | 当前目录不是可用 Git 仓库，git log 失败 | 1 | 记录为环境约束；设计阶段继续推进 |
 | 当前 .git 是空目录，git status 失败 | 1 | 无法提交设计文档；记录限制并交付文件 |
 | 沙箱内 .git 是只读挂载，普通 git init 失败 | 1 | 使用提升权限完成真实仓库初始化，分支为 main |
-| `docker build -t mcphub:dev .` 拉取基础镜像超时 | 2 | 记录为 Docker Hub 网络限制；已用 `docker compose config` 验证 compose 结构 |
+| `docker build -t mcphub:dev .` 拉取基础镜像超时 | 2 | 后续网络恢复后完成构建；发现并修复 Dockerfile 中 `corepack` 缺失问题 |
+| Docker server 启动后 seed 写入 JSONB 失败 | 1 | `pg` 参数写入 JSONB 前统一 `JSON.stringify` |
+| Docker `source.refresh` 对旧 seed URL 返回 404 | 1 | 将示例刷新 URL 改为 `https://example.com/`，并增加 custom route 正文 fallback |
 
 ## 备注
 - 外部网页和规范内容只写入 findings.md，不写入 task_plan.md。
-- 当前任务范围是“分析与设计计划”，不进行代码实现。
+- 当前已进入实现与验证阶段；Docker Compose 端到端验证已完成。

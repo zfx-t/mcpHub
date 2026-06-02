@@ -1,6 +1,6 @@
 FROM node:25-alpine AS build
 WORKDIR /app
-RUN corepack enable
+RUN npm install -g pnpm@10.32.1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps ./apps
 COPY packages ./packages
@@ -11,7 +11,7 @@ RUN pnpm build
 FROM node:25-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
-RUN corepack enable
+RUN npm install -g pnpm@10.32.1
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps ./apps
 COPY packages ./packages

@@ -102,6 +102,19 @@
   - 完成计划 Phase 0-7 的本地完成审计。
 - 完成时间：2026-06-01 21:54 CST
 
+### 阶段 8：Docker Compose 端到端复测
+- **状态：** complete
+- **开始时间：** 2026-06-02 11:45 CST
+- 执行的操作：
+  - 修复 Dockerfile：`node:25-alpine` 镜像内没有可用 `corepack`，改为安装固定版本 `pnpm@10.32.1`。
+  - 修复 PostgreSQL JSONB 写入：对象和数组参数统一序列化后传给 `pg`。
+  - 修复真实 Docker smoke 的 seed URL：`https://example.com/articles/hello` 返回 404，改为 `https://example.com/`。
+  - 为 custom route 增加正文 fallback：目标 selector 没有内容时读取 `article, main, body`。
+  - 运行 `pnpm typecheck`、`pnpm test`、`pnpm lint`、`pnpm build`、`pnpm test:e2e`：均通过。
+  - 运行 `docker compose up --build -d server`：server 和 postgres 均启动成功。
+  - 验证 Docker 服务：`/healthz` 返回 200，`/api/detect-site` 返回 `available`，MCP `resources/list`、`source.refresh`、item `resources/read`、`debug.explain` 均通过。
+- 完成时间：2026-06-02 11:57 CST
+
 ## 测试结果
 | 测试 | 输入 | 预期结果 | 实际结果 | 状态 |
 |------|------|---------|---------|------|
@@ -110,6 +123,9 @@
 ## 错误日志
 | 时间戳 | 错误 | 尝试次数 | 解决方案 |
 |--------|------|---------|---------|
+| 2026-06-02 11:45 CST | Docker build 阶段 `corepack: not found` | 1 | Dockerfile build/runtime 阶段改为 `npm install -g pnpm@10.32.1` |
+| 2026-06-02 11:48 CST | Docker server seed 写入 JSONB 报 `invalid input syntax for type json` | 1 | JSONB 字段写入前统一 `JSON.stringify` |
+| 2026-06-02 11:53 CST | Docker `source.refresh` 使用旧 sample URL 时真实网络返回 404 | 1 | seed URL 改为 `https://example.com/`，custom route 增加正文 fallback |
 | 2026-06-01 15:01 | `git log` 返回 fatal: not a git repository | 1 | 记录环境约束，继续设计流程 |
 | 2026-06-01 19:00 | `git status` 返回 fatal: not a git repository，`.git` 为空目录 | 1 | 无法执行 spec commit，记录并继续交付设计文档 |
 | 2026-06-01 19:07 | 普通 `git init -b main` 失败：`.git/branches` 只读文件系统 | 1 | 使用提升权限在真实文件系统初始化仓库 |
