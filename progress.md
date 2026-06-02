@@ -21,6 +21,28 @@
   - `progress.md`
   - `findings.md`
 
+### 阶段 14：本地插件加载 P1 实现、验证与收尾
+- **状态：** complete
+- **开始时间：** 2026-06-03 CST
+- 执行的操作：
+  - 接收最终评审子代理反馈，确认三个问题需要修复：持久化旧插件仍可执行、运行时凭据/配置失败映射不清晰、disabled 插件仍会 import entrypoint。
+  - 修复 `packages/plugins/src/local-loader.ts`，让 `enabled:false` 在 import `index.js` 前就被跳过，避免 disabled 插件副作用。
+  - 修复 `packages/mcp/src/gateway.ts`，让工具发现与执行权威只来自当前启动时的 `registry`，不再从持久化 repository 兜底读取旧插件/工具。
+  - 修复 `packages/mcp/src/gateway.ts` 的错误路径，将缺失 `baseUrl`、缺失 credential binding、credential resolution failure 映射为明确的 `PLUGIN_EXECUTION_ERROR` / `CREDENTIAL_MISSING`，并补失败审计。
+  - 增补 `packages/mcp/src/gateway.test.ts` 与 `packages/plugins/src/local-loader.test.ts`，覆盖 stale repository tool、credential missing、disabled plugin side effect 等回归。
+  - 运行 focused tests：`packages/plugins/src/local-loader.test.ts`、`packages/mcp/src/gateway.test.ts` 通过。
+  - 运行 `pnpm typecheck` 通过。
+  - 运行 `pnpm lint`、`pnpm test`、`pnpm build`、`docker compose config` 全部通过。
+  - 运行 `pnpm test:e2e` 通过，smoke 输出 `Loaded local plugin local-admin` 和 `Smoke test passed`。
+- 创建/修改的文件：
+  - `packages/plugins/src/local-loader.ts`
+  - `packages/plugins/src/local-loader.test.ts`
+  - `packages/mcp/src/gateway.ts`
+  - `packages/mcp/src/gateway.test.ts`
+  - `task_plan.md`
+  - `progress.md`
+  - `findings.md`
+
 ### 阶段 9：平台化目标重构与新设计探索
 - **状态：** in_progress
 - **开始时间：** 2026-06-02 12:20 CST

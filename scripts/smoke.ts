@@ -1,4 +1,7 @@
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from "node:http";
+import os from "node:os";
+import path from "node:path";
 import { createSeedRepository } from "@mcphub/db";
 import { ExtractionService, FixtureFetcher } from "@mcphub/extractors";
 import { createApp } from "../apps/server/src/app.js";
@@ -23,6 +26,7 @@ const articleHtml = `
 
 const repo = createSeedRepository();
 let disableCalls = 0;
+let localDisableCalls = 0;
 const adminServer = await startFixtureServer(async (request, response) => {
   if (request.url?.startsWith("/api/users") && request.method === "GET") {
     response.setHeader("Content-Type", "application/json");
@@ -35,16 +39,30 @@ const adminServer = await startFixtureServer(async (request, response) => {
     response.end();
     return;
   }
+  if (request.url?.startsWith("/api/local-users") && request.method === "GET") {
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ users: [{ id: "local-user-1", name: "Grace" }], authorization: request.headers.authorization }));
+    return;
+  }
+  if (request.url?.startsWith("/api/local-users/local-user-1/disable")) {
+    localDisableCalls += 1;
+    response.statusCode = 204;
+    response.end();
+    return;
+  }
   response.statusCode = 404;
   response.end("not found");
 });
+const pluginDir = await createLocalPluginFixture(adminServer.baseUrl);
 const smokeEnv = {
   PUBLIC_BASE_URL: "http://127.0.0.1:0",
   MCP_SERVER_URL: "http://127.0.0.1:0/mcp",
   REQUEST_LOGGING: "false",
   SAMPLE_ADMIN_API_BASE_URL: adminServer.baseUrl,
   SAMPLE_ADMIN_API_TOKEN_ENV: "SAMPLE_ADMIN_API_TOKEN",
-  SAMPLE_ADMIN_API_TOKEN: "secret-token"
+  SAMPLE_ADMIN_API_TOKEN: "secret-token",
+  MCPHUB_PLUGIN_DIR: pluginDir,
+  LOCAL_ADMIN_API_TOKEN: "local-secret-token"
 };
 const config = loadConfig(smokeEnv);
 const extraction = new ExtractionService(
@@ -101,11 +119,16 @@ try {
     params: { uri: "mcphub://plugins" }
   });
   assertStatus(pluginList.status, 200, "plugin list status");
-  assertIncludes(pluginList.body, "sample-admin", "plugin list includes sample admin");
+  const pluginListText = mcpText(pluginList.body);
+  assertIncludes(pluginListText, "sample-admin", "plugin list includes sample admin");
+  assertIncludes(pluginListText, "local-admin", "plugin list includes local admin");
+  assertIncludes(pluginListText, "\"source\": \"local\"", "plugin list includes local metadata");
+  assertNotIncludes(pluginListText, "local-secret-token", "plugin list redacts local secret value");
 
   const toolList = await postJson(`${baseUrl}/mcp`, { jsonrpc: "2.0", id: 12, method: "tools/list", params: {} });
   assertStatus(toolList.status, 200, "tools/list status");
   assertIncludes(toolList.body, "admin.users.list", "tools/list includes admin.users.list");
+  assertIncludes(toolList.body, "local.admin.users.list", "tools/list includes local.admin.users.list");
 
   const refresh = await postJson(`${baseUrl}/mcp`, {
     jsonrpc: "2.0",
@@ -125,7 +148,7 @@ try {
     params: { uri: `webmcp://items/${items[0].id}` }
   });
   assertStatus(readItem.status, 200, "item read status");
-  if (!String(readItem.body).includes("Hello MCP")) {
+  if (!mcpText(readItem.body).includes("Hello MCP")) {
     throw new Error("item read did not include expected content");
   }
 
@@ -144,8 +167,20 @@ try {
     params: { name: "admin.users.list", arguments: { page: 1 } }
   });
   assertStatus(adminUsers.status, 200, "admin.users.list status");
-  assertIncludes(adminUsers.body, "Ada", "admin.users.list result");
-  assertIncludes(adminUsers.body, "Bearer secret-token", "admin.users.list auth forwarding");
+  const adminUsersText = mcpText(adminUsers.body);
+  assertIncludes(adminUsersText, "Ada", "admin.users.list result");
+  assertIncludes(adminUsersText, "Bearer secret-token", "admin.users.list auth forwarding");
+
+  const localUsers = await postJson(`${baseUrl}/mcp`, {
+    jsonrpc: "2.0",
+    id: 16,
+    method: "tools/call",
+    params: { name: "local.admin.users.list", arguments: { page: 1 } }
+  });
+  assertStatus(localUsers.status, 200, "local.admin.users.list status");
+  const localUsersText = mcpText(localUsers.body);
+  assertIncludes(localUsersText, "Grace", "local.admin.users.list result");
+  assertIncludes(localUsersText, "Bearer local-secret-token", "local.admin.users.list auth forwarding");
 
   const disable = await postJson(`${baseUrl}/mcp`, {
     jsonrpc: "2.0",
@@ -154,8 +189,18 @@ try {
     params: { name: "admin.users.disable", arguments: { id: "user-1" } }
   });
   assertStatus(disable.status, 200, "admin.users.disable status");
-  assertIncludes(disable.body, "CONFIRMATION_REQUIRED", "admin.users.disable confirmation block");
+  assertIncludes(mcpText(disable.body), "CONFIRMATION_REQUIRED", "admin.users.disable confirmation block");
   assertEqual(disableCalls, 0, "dangerous remote call count");
+
+  const localDisable = await postJson(`${baseUrl}/mcp`, {
+    jsonrpc: "2.0",
+    id: 17,
+    method: "tools/call",
+    params: { name: "local.admin.users.disable", arguments: { id: "local-user-1" } }
+  });
+  assertStatus(localDisable.status, 200, "local.admin.users.disable status");
+  assertIncludes(mcpText(localDisable.body), "\"ok\": true", "local.admin.users.disable auditOnly success");
+  assertEqual(localDisableCalls, 1, "local dangerous remote call count");
 
   const audit = await postJson(`${baseUrl}/mcp`, {
     jsonrpc: "2.0",
@@ -164,13 +209,18 @@ try {
     params: { uri: "mcphub://audit/recent" }
   });
   assertStatus(audit.status, 200, "audit recent status");
-  assertIncludes(audit.body, "CONFIRMATION_REQUIRED", "audit recent contains blocked call");
-  assertIncludes(audit.body, "user-1", "audit recent contains blocked call input");
+  const auditText = mcpText(audit.body);
+  assertIncludes(auditText, "CONFIRMATION_REQUIRED", "audit recent contains blocked call");
+  assertIncludes(auditText, "user-1", "audit recent contains blocked call input");
+  assertIncludes(auditText, "local.admin.users.disable", "audit recent contains local dangerous call");
+  assertIncludes(auditText, "_policyMode", "audit recent contains policy evidence");
+  assertIncludes(auditText, "auditOnly", "audit recent contains auditOnly evidence");
 
   console.log("Smoke test passed");
 } finally {
   await app.close();
   await adminServer.close();
+  await rm(pluginDir, { recursive: true, force: true });
 }
 
 async function postJson(url: string, payload: unknown): Promise<{ status: number; body: any }> {
@@ -200,9 +250,52 @@ function assertEqual<T>(actual: T, expected: T, label: string): void {
 }
 
 function assertIncludes(value: unknown, expected: string, label: string): void {
-  if (!String(value).includes(expected)) {
-    throw new Error(`${label}: expected body to include ${expected}`);
+  const actual = stringifyForAssertion(value);
+  if (!actual.includes(expected)) {
+    throw new Error(`${label}: expected body to include ${expected}. Actual: ${actual.slice(0, 1000)}`);
   }
+}
+
+function assertNotIncludes(value: unknown, unexpected: string, label: string): void {
+  const actual = stringifyForAssertion(value);
+  if (actual.includes(unexpected)) {
+    throw new Error(`${label}: expected body not to include ${unexpected}`);
+  }
+}
+
+function stringifyForAssertion(value: unknown): string {
+  return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+function mcpText(body: unknown): string {
+  if (typeof body === "string" && body.startsWith("event:")) {
+    const dataLine = body
+      .split("\n")
+      .map((line) => line.trim())
+      .find((line) => line.startsWith("data: "));
+    if (dataLine) {
+      try {
+        return mcpText(JSON.parse(dataLine.slice("data: ".length)));
+      } catch {
+        return body;
+      }
+    }
+  }
+  if (!body || typeof body !== "object") {
+    return stringifyForAssertion(body);
+  }
+  const record = body as {
+    result?: {
+      content?: Array<{ text?: string }>;
+      contents?: Array<{ text?: string }>;
+    };
+  };
+  const contentText = record.result?.content?.map((entry) => entry.text ?? "").join("\n");
+  if (contentText) {
+    return contentText;
+  }
+  const contentsText = record.result?.contents?.map((entry) => entry.text ?? "").join("\n");
+  return contentsText || stringifyForAssertion(body);
 }
 
 async function startFixtureServer(handler: (request: IncomingMessage, response: ServerResponse) => void | Promise<void>): Promise<{
@@ -221,4 +314,62 @@ async function startFixtureServer(handler: (request: IncomingMessage, response: 
     baseUrl: `http://127.0.0.1:${address.port}`,
     close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())))
   };
+}
+
+async function createLocalPluginFixture(baseUrl: string): Promise<string> {
+  const pluginDir = await mkdtemp(path.join(os.tmpdir(), "mcphub-smoke-plugins-"));
+  const pluginPath = path.join(pluginDir, "local-admin");
+  await mkdir(pluginPath, { recursive: true });
+  await writeFile(path.join(pluginPath, "index.js"), localPluginModuleSource());
+  await writeFile(
+    path.join(pluginPath, "plugin.config.json"),
+    JSON.stringify(
+      {
+        enabled: true,
+        config: { baseUrl },
+        credentials: {
+          "admin-token": {
+            type: "bearer",
+            secretRef: "env:LOCAL_ADMIN_API_TOKEN"
+          }
+        },
+        policy: {
+          dangerousMode: "auditOnly"
+        }
+      },
+      null,
+      2
+    )
+  );
+  return pluginDir;
+}
+
+function localPluginModuleSource(): string {
+  return `export default {
+  id: "local-admin",
+  name: "Local Admin",
+  version: "0.1.0",
+  type: "api",
+  description: "Local admin smoke plugin.",
+  credentials: [{ id: "admin-token", type: "bearer" }],
+  tools: [
+    {
+      name: "local.admin.users.list",
+      description: "List local users.",
+      inputSchema: { type: "object", properties: { page: { type: "number" } } },
+      effect: "read",
+      credentialRefs: ["admin-token"],
+      operation: { type: "http", method: "GET", path: "/api/local-users" }
+    },
+    {
+      name: "local.admin.users.disable",
+      description: "Disable a local user.",
+      inputSchema: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+      effect: "dangerous",
+      credentialRefs: ["admin-token"],
+      operation: { type: "http", method: "POST", path: "/api/local-users/{id}/disable" }
+    }
+  ]
+};
+`;
 }

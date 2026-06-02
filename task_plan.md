@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 12：本地插件加载 P1 设计文档审阅
+阶段 14：本地插件加载 P1 实现、验证与收尾
 
 ## 各阶段
 
@@ -111,9 +111,19 @@
 - [x] 检查现有配置、平台装配、插件 SDK、策略引擎、MCP Gateway 和 smoke 测试接缝
 - [x] 写入 `docs/superpowers/plans/2026-06-03-local-plugin-loading-implementation-plan.md`
 - [x] 自检实施计划覆盖配置、loader、repository、policy、MCP、audit、smoke、Docker 和文档
-- [ ] 用户审阅本地插件加载实施计划
-- [ ] 用户确认后进入代码实现
-- **状态：** in_progress
+- [x] 用户审阅本地插件加载实施计划
+- [x] 用户确认后进入代码实现
+- **状态：** complete
+
+### 阶段 14：本地插件加载 P1 实现、验证与收尾
+- [x] 修复本地插件 loader，disabled 插件不再 import entrypoint
+- [x] 修复 MCP gateway，工具调用只认本次启动的 registry，不再受持久化旧行影响
+- [x] 修复运行时凭据/配置错误映射与失败审计
+- [x] 补充回归测试，覆盖 disabled side effect、stale repository tool、credential missing
+- [x] 运行 focused tests 和 typecheck
+- [x] 运行全量验证：`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e`、`docker compose config`
+- [x] 整理最终提交
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？

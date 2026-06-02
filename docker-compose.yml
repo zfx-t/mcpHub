@@ -11,13 +11,17 @@ services:
       DATABASE_URL: postgres://mcphub:mcphub@postgres:5432/mcphub
       FETCH_TIMEOUT_MS: 10000
       FETCH_RATE_LIMIT_PER_MINUTE: 60
+      MCPHUB_PLUGIN_DIR: ${MCPHUB_PLUGIN_DIR:-}
       SAMPLE_ADMIN_API_BASE_URL: ${SAMPLE_ADMIN_API_BASE_URL:-}
       SAMPLE_ADMIN_API_TOKEN_ENV: SAMPLE_ADMIN_API_TOKEN
       SAMPLE_ADMIN_API_TOKEN: ${SAMPLE_ADMIN_API_TOKEN:-}
+      LOCAL_ADMIN_API_TOKEN: ${LOCAL_ADMIN_API_TOKEN:-}
     ports:
       - "3000:3000"
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    volumes:
+      - ${MCPHUB_PLUGIN_HOST_DIR:-./plugins}:/opt/mcphub/plugins:ro
     depends_on:
       postgres:
         condition: service_healthy

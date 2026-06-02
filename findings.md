@@ -89,6 +89,10 @@
 | 本地插件加载实施接缝清晰 | 当前 `apps/server/src/platform.ts` 只装配 sample admin；P1 可在此组合本地 loader、registry、credential store、audit logger 和 per-plugin policy |
 | P1 策略变化集中在 policy 与 gateway | 当前 `packages/policy/src/engine.ts` 对 dangerous 固定返回 `CONFIRMATION_REQUIRED`；P1 需要让 `auditOnly/allow` 能继续执行 connector 并记录审计证据 |
 | 本地插件 smoke 适合复用现有脚本 | `scripts/smoke.ts` 已覆盖 fixture REST、MCP `tools/list`、tool call、dangerous block 和 audit，可扩展为 temp-dir local plugin 验证 |
+| disabled 本地插件必须在 import 前被过滤 | 最终评审指出 `enabled:false` 之前仍会执行 entrypoint 顶层代码，已修复为先读 `plugin.config.json` 再决定是否 import `index.js` |
+| 持久化 repository 不能作为插件执行权威 | 最终评审指出 stale repository tool 可绕过当前目录状态，已修复为 `tools/list`、插件资源和 `tools/call` 只认当前启动时 registry |
+| 运行时配置/凭据失败需要明确平台错误码 | 最终评审指出 `baseUrl` / credential binding / env secret 缺失不能只冒泡为 `MCP_GATEWAY_ERROR`，已修复为 `PLUGIN_EXECUTION_ERROR` / `CREDENTIAL_MISSING` 并补失败审计 |
+| 最终评审问题已修复并回归 | 已补 `packages/plugins/src/local-loader.test.ts`、`packages/mcp/src/gateway.test.ts`，并通过 focused tests 和 `pnpm typecheck` |
 
 ## 平台化演进草案
 
