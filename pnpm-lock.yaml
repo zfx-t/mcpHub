@@ -27,9 +27,18 @@ importers:
       '@eslint/js':
         specifier: ^9.39.1
         version: 9.39.4
+      '@mcphub/api-connector':
+        specifier: workspace:*
+        version: link:packages/api-connector
+      '@mcphub/audit':
+        specifier: workspace:*
+        version: link:packages/audit
       '@mcphub/core':
         specifier: workspace:*
         version: link:packages/core
+      '@mcphub/credentials':
+        specifier: workspace:*
+        version: link:packages/credentials
       '@mcphub/db':
         specifier: workspace:*
         version: link:packages/db
@@ -39,6 +48,12 @@ importers:
       '@mcphub/mcp':
         specifier: workspace:*
         version: link:packages/mcp
+      '@mcphub/plugins':
+        specifier: workspace:*
+        version: link:packages/plugins
+      '@mcphub/policy':
+        specifier: workspace:*
+        version: link:packages/policy
       '@types/chrome':
         specifier: ^0.1.36
         version: 0.1.42
@@ -75,9 +90,15 @@ importers:
 
   apps/server:
     dependencies:
+      '@mcphub/audit':
+        specifier: workspace:*
+        version: link:../../packages/audit
       '@mcphub/core':
         specifier: workspace:*
         version: link:../../packages/core
+      '@mcphub/credentials':
+        specifier: workspace:*
+        version: link:../../packages/credentials
       '@mcphub/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -87,8 +108,35 @@ importers:
       '@mcphub/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
+      '@mcphub/plugins':
+        specifier: workspace:*
+        version: link:../../packages/plugins
+
+  packages/api-connector:
+    dependencies:
+      '@mcphub/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mcphub/credentials':
+        specifier: workspace:*
+        version: link:../credentials
+
+  packages/audit:
+    dependencies:
+      '@mcphub/core':
+        specifier: workspace:*
+        version: link:../core
+      '@mcphub/db':
+        specifier: workspace:*
+        version: link:../db
 
   packages/core: {}
+
+  packages/credentials:
+    dependencies:
+      '@mcphub/core':
+        specifier: workspace:*
+        version: link:../core
 
   packages/db:
     dependencies:
@@ -107,15 +155,42 @@ importers:
 
   packages/mcp:
     dependencies:
+      '@mcphub/api-connector':
+        specifier: workspace:*
+        version: link:../api-connector
+      '@mcphub/audit':
+        specifier: workspace:*
+        version: link:../audit
       '@mcphub/core':
         specifier: workspace:*
         version: link:../core
+      '@mcphub/credentials':
+        specifier: workspace:*
+        version: link:../credentials
       '@mcphub/db':
         specifier: workspace:*
         version: link:../db
       '@mcphub/extractors':
         specifier: workspace:*
         version: link:../extractors
+      '@mcphub/plugins':
+        specifier: workspace:*
+        version: link:../plugins
+      '@mcphub/policy':
+        specifier: workspace:*
+        version: link:../policy
+
+  packages/plugins:
+    dependencies:
+      '@mcphub/core':
+        specifier: workspace:*
+        version: link:../core
+
+  packages/policy:
+    dependencies:
+      '@mcphub/core':
+        specifier: workspace:*
+        version: link:../core
 
 packages:
 

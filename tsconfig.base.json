@@ -11,8 +11,13 @@
     "baseUrl": ".",
     "paths": {
       "@mcphub/core": ["packages/core/src/index.ts"],
+      "@mcphub/api-connector": ["packages/api-connector/src/index.ts"],
+      "@mcphub/audit": ["packages/audit/src/index.ts"],
+      "@mcphub/credentials": ["packages/credentials/src/index.ts"],
       "@mcphub/db": ["packages/db/src/index.ts"],
       "@mcphub/extractors": ["packages/extractors/src/index.ts"],
+      "@mcphub/plugins": ["packages/plugins/src/index.ts"],
+      "@mcphub/policy": ["packages/policy/src/index.ts"],
       "@mcphub/mcp": ["packages/mcp/src/index.ts"]
     },
     "declaration": true,

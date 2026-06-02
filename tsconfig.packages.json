@@ -2,8 +2,13 @@
   "files": [],
   "references": [
     { "path": "./packages/core" },
+    { "path": "./packages/api-connector" },
+    { "path": "./packages/audit" },
+    { "path": "./packages/credentials" },
     { "path": "./packages/db" },
     { "path": "./packages/extractors" },
+    { "path": "./packages/plugins" },
+    { "path": "./packages/policy" },
     { "path": "./packages/mcp" },
     { "path": "./apps/server" },
     { "path": "./apps/extension" }

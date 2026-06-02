@@ -10,7 +10,8 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "tsx scripts/smoke.ts",
-    "typecheck": "pnpm --filter @mcphub/core build && pnpm --filter @mcphub/db build && pnpm --filter @mcphub/extractors build && pnpm --filter @mcphub/mcp build && pnpm -r typecheck"
+    "fixture:admin": "tsx scripts/admin-fixture.ts",
+    "typecheck": "pnpm --filter @mcphub/core build && pnpm --filter @mcphub/db build && pnpm --filter @mcphub/extractors build && pnpm --filter @mcphub/plugins build && pnpm --filter @mcphub/credentials build && pnpm --filter @mcphub/policy build && pnpm --filter @mcphub/api-connector build && pnpm --filter @mcphub/audit build && pnpm --filter @mcphub/mcp build && pnpm -r typecheck"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.18.1",
@@ -21,9 +22,14 @@
   },
   "devDependencies": {
     "@mcphub/core": "workspace:*",
+    "@mcphub/api-connector": "workspace:*",
+    "@mcphub/audit": "workspace:*",
+    "@mcphub/credentials": "workspace:*",
     "@mcphub/db": "workspace:*",
     "@mcphub/extractors": "workspace:*",
     "@mcphub/mcp": "workspace:*",
+    "@mcphub/plugins": "workspace:*",
+    "@mcphub/policy": "workspace:*",
     "@eslint/js": "^9.39.1",
     "@types/chrome": "^0.1.36",
     "@types/node": "^24.10.1",
