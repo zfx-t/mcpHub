@@ -17,8 +17,12 @@
   - 用户确认平台化方向，并要求继续。
   - 写入 `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md`。
   - 自检平台化设计文档：未发现 TODO/TBD 占位符；P0/P1/P2 边界、危险操作阻断、插件信任边界和现有 MVP 迁移路径已明确。
+  - 用户审阅平台化设计文档并确认没有问题，要求继续。
+  - 写入 `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md`。
+  - 实施计划拆分 Phase 0-11：基线保护、领域模型、数据库、插件 SDK、API Connector、Credential Store、Policy Engine、Audit Log、MCP 聚合、样例 Admin API 插件、配置文档、端到端验证。
 - 创建/修改的文件：
   - `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md`
+  - `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md`
   - `task_plan.md`
   - `findings.md`
   - `progress.md`

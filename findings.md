@@ -78,6 +78,8 @@
 | 当前 MVP 与新目标存在范围差距 | 现有实现偏 Web 内容抽取与缓存，已具备 MCP Gateway/Tools/Resources/存储/Docker 底座，但缺少通用插件运行时、API-to-MCP 适配、鉴权、权限策略、审计和危险操作确认 |
 | 平台化方向已获用户确认 | 用户确认继续采用“分层通用平台，P0 REST/API 插件适配 + 保留 Web 内容插件”路线 |
 | 平台化设计文档已落盘 | `docs/superpowers/specs/2026-06-02-mcphub-platform-design.md` 定义平台目标、插件模型、API-to-MCP 映射、凭据、策略、审计、迁移和验收标准 |
+| 平台化设计文档已获批 | 用户确认设计文档没有问题并要求继续 |
+| 平台化实施计划已落盘 | `docs/superpowers/plans/2026-06-02-mcphub-platform-implementation-plan.md` 拆分 Phase 0-11，覆盖平台模型、存储、插件 SDK、API Connector、凭据、策略、审计、MCP 聚合、样例插件、文档和端到端验证 |
 
 ## 平台化演进草案
 
