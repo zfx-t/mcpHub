@@ -6,9 +6,10 @@ export interface ToolCallTarget {
   path?: string;
 }
 
+export type DangerousMode = "block" | "auditOnly" | "allow";
+
 export interface PolicyConfig {
-  writeToolNames?: string[];
-  dangerousConfirmationTokens?: Record<string, string>;
+  dangerousMode?: DangerousMode;
   allowedHosts?: string[];
   allowedMethods?: string[];
   allowedPathPatterns?: string[];
@@ -51,17 +52,14 @@ export function evaluateToolPolicy(input: PolicyEvaluationInput): PolicyDecision
   }
 
   if (tool.effect === "write") {
-    if (policy.writeToolNames?.includes(tool.name)) {
-      return { allowed: true, status: "allowed" };
-    }
-    return denied("policy_denied", "POLICY_DENIED", `Write tool ${tool.name} is not granted by policy.`);
-  }
-
-  const expectedToken = policy.dangerousConfirmationTokens?.[tool.name];
-  if (expectedToken && input.confirmationToken === expectedToken) {
     return { allowed: true, status: "allowed" };
   }
-  return denied("blocked", "CONFIRMATION_REQUIRED", `Dangerous tool ${tool.name} requires explicit confirmation.`);
+
+  const dangerousMode = policy.dangerousMode ?? "auditOnly";
+  if (dangerousMode === "block") {
+    return denied("blocked", "CONFIRMATION_REQUIRED", `Dangerous tool ${tool.name} requires explicit confirmation.`);
+  }
+  return { allowed: true, status: "allowed" };
 }
 
 function evaluateTarget(target: ToolCallTarget | undefined, policy: PolicyConfig): PolicyDecision {

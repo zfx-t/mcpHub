@@ -81,12 +81,22 @@ describe("WebMcpGateway", () => {
     const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
       registry: new PluginRegistry([sampleAdminPlugin]),
       credentialStore: new EnvironmentCredentialStore({ env: { ADMIN_TOKEN: "secret-token" } }),
-      auditLogger: new AuditLogger({ repository: repo })
+      auditLogger: new AuditLogger({ repository: repo }),
+      pluginPolicies: { "sample-admin": { dangerousMode: "block" } },
+      pluginMetadata: {
+        "sample-admin": {
+          source: "built_in",
+          credentials: [{ id: "admin-token", type: "bearer", configured: true }]
+        }
+      }
     });
 
     expect(gateway.listTools()).toEqual(expect.arrayContaining([expect.objectContaining({ name: "admin.users.list" })]));
     await expect(gateway.readResource("mcphub://plugins/sample-admin/tools")).resolves.toEqual([
       expect.objectContaining({ text: expect.stringContaining("admin.users.disable") })
+    ]);
+    await expect(gateway.readResource("mcphub://plugins")).resolves.toEqual([
+      expect.objectContaining({ text: expect.stringContaining('"source": "built_in"') })
     ]);
 
     const listResult = JSON.parse((await gateway.callTool("admin.users.list", { page: 1 }))[0].text) as {
@@ -106,6 +116,127 @@ describe("WebMcpGateway", () => {
     expect(disableCalls).toBe(0);
     await expect(gateway.readResource("mcphub://audit/recent")).resolves.toEqual([
       expect.objectContaining({ text: expect.stringContaining("CONFIRMATION_REQUIRED") })
+    ]);
+  });
+
+  it("executes dangerous tools under auditOnly and records policy evidence", async () => {
+    let disableCalls = 0;
+    const baseUrl = await startFixtureServer(async (request, response) => {
+      if (request.url?.startsWith("/api/users/user-1/disable")) {
+        disableCalls += 1;
+        response.statusCode = 204;
+        response.end();
+        return;
+      }
+      response.statusCode = 404;
+      response.end("not found");
+    });
+    const repo = createSeedRepository();
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(sampleAdminPlugin), config: { baseUrl } });
+    for (const tool of pluginToolsFromManifest(sampleAdminPlugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    await repo.upsertCredential({
+      id: "cred_sample_admin_token",
+      pluginId: "sample-admin",
+      requirementId: "admin-token",
+      name: "Sample admin token",
+      type: "bearer",
+      secretRef: "env:ADMIN_TOKEN"
+    });
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      registry: new PluginRegistry([sampleAdminPlugin]),
+      credentialStore: new EnvironmentCredentialStore({ env: { ADMIN_TOKEN: "secret-token" } }),
+      auditLogger: new AuditLogger({ repository: repo }),
+      pluginPolicies: { "sample-admin": { dangerousMode: "auditOnly" } }
+    });
+
+    const disableResult = JSON.parse((await gateway.callTool("admin.users.disable", { id: "user-1" }))[0].text) as {
+      ok: boolean;
+    };
+
+    expect(disableResult).toMatchObject({ ok: true });
+    expect(disableCalls).toBe(1);
+    await expect(repo.listAuditRecords({ toolName: "admin.users.disable" })).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "allowed", inputSummary: expect.objectContaining({ _policyMode: "auditOnly" }) }),
+        expect.objectContaining({ status: "succeeded", inputSummary: expect.objectContaining({ _policyMode: "auditOnly" }) })
+      ])
+    );
+  });
+
+  it("does not execute tools that exist only in persisted repository state", async () => {
+    const baseUrl = await startFixtureServer(async (_request, response) => {
+      response.statusCode = 204;
+      response.end();
+    });
+    const repo = createSeedRepository();
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(sampleAdminPlugin), config: { baseUrl } });
+    for (const tool of pluginToolsFromManifest(sampleAdminPlugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    await repo.upsertCredential({
+      id: "cred_sample_admin_token",
+      pluginId: "sample-admin",
+      requirementId: "admin-token",
+      name: "Sample admin token",
+      type: "bearer",
+      secretRef: "env:ADMIN_TOKEN"
+    });
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})));
+
+    const response = await gateway.handleJsonRpc({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "admin.users.list", arguments: { page: 1 } }
+    });
+
+    expect(response).toMatchObject({
+      error: {
+        data: { code: "MCP_GATEWAY_ERROR" }
+      }
+    });
+    await expect(repo.listAuditRecords({ toolName: "admin.users.list" })).resolves.toEqual([]);
+  });
+
+  it("returns CREDENTIAL_MISSING and records a failed audit when a credential binding is absent", async () => {
+    const baseUrl = await startFixtureServer(async (_request, response) => {
+      response.statusCode = 204;
+      response.end();
+    });
+    const repo = createSeedRepository();
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(sampleAdminPlugin), config: { baseUrl } });
+    for (const tool of pluginToolsFromManifest(sampleAdminPlugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    await repo.upsertCredential({
+      id: "cred_sample_admin_token",
+      pluginId: "sample-admin",
+      requirementId: "admin-token",
+      name: "Sample admin token",
+      type: "bearer",
+      secretRef: "env:ADMIN_TOKEN"
+    });
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      registry: new PluginRegistry([sampleAdminPlugin]),
+      auditLogger: new AuditLogger({ repository: repo })
+    });
+
+    const listResult = JSON.parse((await gateway.callTool("admin.users.list", { page: 1 }))[0].text) as {
+      ok: boolean;
+      error: { code: string };
+    };
+
+    expect(listResult).toMatchObject({
+      ok: false,
+      error: { code: "CREDENTIAL_MISSING" }
+    });
+    await expect(repo.listAuditRecords({ toolName: "admin.users.list" })).resolves.toEqual([
+      expect.objectContaining({
+        status: "failed",
+        errorCode: "CREDENTIAL_MISSING"
+      })
     ]);
   });
 });

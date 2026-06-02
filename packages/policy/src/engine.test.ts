@@ -40,28 +40,22 @@ describe("evaluateToolPolicy", () => {
     });
   });
 
-  it("requires write grants", () => {
+  it("allows write tools by default", () => {
     const tool = { ...readTool, name: "admin.users.update", effect: "write" as const };
 
-    expect(evaluateToolPolicy({ plugin, tool })).toMatchObject({ allowed: false, code: "POLICY_DENIED" });
-    expect(evaluateToolPolicy({ plugin, tool, policy: { writeToolNames: ["admin.users.update"] } })).toEqual({
-      allowed: true,
-      status: "allowed"
-    });
+    expect(evaluateToolPolicy({ plugin, tool })).toEqual({ allowed: true, status: "allowed" });
   });
 
-  it("blocks dangerous tools without confirmation", () => {
+  it("uses dangerousMode with auditOnly default", () => {
     const tool = { ...readTool, name: "admin.users.disable", effect: "dangerous" as const, requiresConfirmation: true };
 
-    expect(evaluateToolPolicy({ plugin, tool })).toMatchObject({ allowed: false, code: "CONFIRMATION_REQUIRED" });
-    expect(
-      evaluateToolPolicy({
-        plugin,
-        tool,
-        confirmationToken: "confirmed",
-        policy: { dangerousConfirmationTokens: { "admin.users.disable": "confirmed" } }
-      })
-    ).toEqual({ allowed: true, status: "allowed" });
+    expect(evaluateToolPolicy({ plugin, tool })).toEqual({ allowed: true, status: "allowed" });
+    expect(evaluateToolPolicy({ plugin, tool, policy: { dangerousMode: "auditOnly" } })).toEqual({ allowed: true, status: "allowed" });
+    expect(evaluateToolPolicy({ plugin, tool, policy: { dangerousMode: "allow" } })).toEqual({ allowed: true, status: "allowed" });
+    expect(evaluateToolPolicy({ plugin, tool, policy: { dangerousMode: "block" } })).toMatchObject({
+      allowed: false,
+      code: "CONFIRMATION_REQUIRED"
+    });
   });
 
   it("enforces host, method, and path restrictions", () => {

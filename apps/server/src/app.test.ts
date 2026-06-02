@@ -1,3 +1,6 @@
+import { mkdtemp, mkdir, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
 import { describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { AuditLogger } from "@mcphub/audit";
@@ -120,6 +123,10 @@ describe("server app", () => {
     await expect(repo.getCredentialForRequirement("sample-admin", "admin-token")).resolves.toMatchObject({
       secretRef: "env:ADMIN_TOKEN"
     });
+    expect(platform?.pluginMetadata?.["sample-admin"]).toEqual({
+      source: "built_in",
+      credentials: [{ id: "admin-token", type: "bearer", configured: true }]
+    });
   });
 
   it("preserves sample admin tool arguments through the SDK MCP transport", async () => {
@@ -134,7 +141,11 @@ describe("server app", () => {
       repository: repo,
       extraction: new ExtractionService(repo, new FixtureFetcher({})),
       config,
-      platform: { ...platform, auditLogger: new AuditLogger({ repository: repo }) }
+      platform: {
+        ...platform,
+        auditLogger: new AuditLogger({ repository: repo }),
+        pluginPolicies: { ...(platform?.pluginPolicies ?? {}), "sample-admin": { dangerousMode: "block" } }
+      }
     });
 
     await initializeMcp(app);
@@ -153,8 +164,50 @@ describe("server app", () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toContain("CONFIRMATION_REQUIRED");
     await expect(repo.listAuditRecords({ toolName: "admin.users.disable" })).resolves.toEqual([
-      expect.objectContaining({ target: "https://admin.local/api/users/user-1/disable", inputSummary: { id: "user-1" } })
+      expect.objectContaining({
+        target: "https://admin.local/api/users/user-1/disable",
+        inputSummary: expect.objectContaining({ id: "user-1", _policyMode: "block" })
+      })
     ]);
+  });
+
+  it("loads local plugins from MCPHUB_PLUGIN_DIR into platform services", async () => {
+    const repo = createSeedRepository();
+    const pluginDir = await mkdtemp(path.join(os.tmpdir(), "mcphub-app-local-"));
+    try {
+      const fixturePath = path.join(pluginDir, "local-admin");
+      await mkdir(fixturePath, { recursive: true });
+      await writeFile(path.join(fixturePath, "index.js"), localPluginModuleSource("local-admin", "local.admin"));
+      await writeFile(
+        path.join(fixturePath, "plugin.config.json"),
+        JSON.stringify(
+          {
+            enabled: true,
+            config: { baseUrl: "https://admin.local" },
+            credentials: { "admin-token": { type: "bearer", secretRef: "env:LOCAL_ADMIN_TOKEN" } },
+            policy: { dangerousMode: "allow" }
+          },
+          null,
+          2
+        )
+      );
+
+      const config = loadConfig({
+        REQUEST_LOGGING: "false",
+        MCPHUB_PLUGIN_DIR: pluginDir
+      });
+      const platform = await createPlatformServices({ repository: repo, config, env: { LOCAL_ADMIN_TOKEN: "secret" } });
+
+      expect(platform?.registry?.getManifest("local-admin")).toBeDefined();
+      expect(platform?.pluginPolicies?.["local-admin"]).toEqual({ dangerousMode: "allow" });
+      expect(platform?.pluginMetadata?.["local-admin"]).toEqual({
+        source: "local",
+        credentials: [{ id: "admin-token", type: "bearer", configured: true }]
+      });
+      await expect(repo.getPlugin("local-admin")).resolves.toMatchObject({ config: { baseUrl: "https://admin.local" } });
+    } finally {
+      await rm(pluginDir, { recursive: true, force: true });
+    }
   });
 });
 
@@ -174,4 +227,34 @@ async function initializeMcp(app: FastifyInstance): Promise<void> {
       }
     }
   });
+}
+
+function localPluginModuleSource(pluginId: string, toolPrefix: string): string {
+  return `export default {
+  id: "${pluginId}",
+  name: "${pluginId}",
+  version: "0.1.0",
+  type: "api",
+  description: "Local plugin fixture",
+  credentials: [{ id: "admin-token", type: "bearer" }],
+  tools: [
+    {
+      name: "${toolPrefix}.users.list",
+      description: "List users",
+      inputSchema: { type: "object", properties: { page: { type: "number" } } },
+      effect: "read",
+      credentialRefs: ["admin-token"],
+      operation: { type: "http", method: "GET", path: "/api/users" }
+    },
+    {
+      name: "${toolPrefix}.users.disable",
+      description: "Disable user",
+      inputSchema: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
+      effect: "dangerous",
+      credentialRefs: ["admin-token"],
+      operation: { type: "http", method: "POST", path: "/api/users/{id}/disable" }
+    }
+  ]
+};
+`;
 }

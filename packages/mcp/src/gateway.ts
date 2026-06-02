@@ -2,10 +2,10 @@ import { z } from "zod";
 import { ApiConnector, summarizeRequest } from "@mcphub/api-connector";
 import type { ApiConnectorResult, ApiHttpMethod, ApiRequest } from "@mcphub/api-connector";
 import type { AuditLogger } from "@mcphub/audit";
-import { EnvironmentCredentialStore } from "@mcphub/credentials";
+import { CredentialResolutionError, EnvironmentCredentialStore } from "@mcphub/credentials";
 import type { CredentialStore } from "@mcphub/credentials";
 import { sourceSearchFiltersSchema, toResourceUri } from "@mcphub/core";
-import type { FeedItem, PlatformErrorCode, Plugin, PluginTool } from "@mcphub/core";
+import type { CredentialType, FeedItem, PlatformErrorCode, Plugin, PluginTool } from "@mcphub/core";
 import type { McpHubRepository } from "@mcphub/db";
 import type { ExtractionService } from "@mcphub/extractors";
 import type { PluginRegistry } from "@mcphub/plugins";
@@ -26,13 +26,22 @@ export interface McpResourceDescriptor {
   mimeType: string;
 }
 
+export interface PlatformPluginMetadata {
+  source: "built_in" | "local";
+  credentials: Array<{ id: string; type: CredentialType; configured: boolean }>;
+}
+
 export interface PlatformGatewayOptions {
   registry?: PluginRegistry;
   apiConnector?: ApiConnector;
   credentialStore?: CredentialStore;
   auditLogger?: AuditLogger;
   policy?: PolicyConfig;
+  pluginPolicies?: Record<string, PolicyConfig>;
+  pluginMetadata?: Record<string, PlatformPluginMetadata>;
 }
+
+type DecoratedPlugin = Plugin & Partial<PlatformPluginMetadata>;
 
 export class WebMcpGateway {
   private readonly apiConnector: ApiConnector;
@@ -98,7 +107,7 @@ export class WebMcpGateway {
       if (!plugin) {
         throw new Error(`Unknown plugin ${pluginMatch[1]}`);
       }
-      return jsonContent(uri, plugin);
+      return jsonContent(uri, this.decoratePlugin(plugin));
     }
 
     if (uri === "webmcp://sources") {
@@ -284,34 +293,69 @@ export class WebMcpGateway {
       tool,
       target,
       confirmationToken: confirmationTokenFromInput(input),
-      policy: this.platform.policy
+      policy: this.policyForPlugin(tool.pluginId)
     });
     if (!decision.allowed) {
       await this.writeToolAudit(tool, decision.status, input, {
         target: target.url,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
         errorCode: decision.code,
         errorMessage: decision.message
       });
       return jsonContent(`tool://${name}`, platformErrorResult(name, decision.code, decision.message));
     }
-    await this.writeToolAudit(tool, "allowed", input, { target: target.url });
 
     if (!plugin || !tool.operation || tool.operation.type !== "http") {
       const message = `Tool ${name} does not have an executable HTTP operation.`;
-      await this.writeToolAudit(tool, "failed", input, { target: target.url, errorCode: "PLUGIN_EXECUTION_ERROR", errorMessage: message });
+      await this.writeToolAudit(tool, "failed", input, {
+        target: target.url,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
+        errorCode: "PLUGIN_EXECUTION_ERROR",
+        errorMessage: message
+      });
       return jsonContent(`tool://${name}`, platformErrorResult(name, "PLUGIN_EXECUTION_ERROR", message));
     }
 
-    const request = await this.requestForTool(plugin, tool, input);
-    const result = await this.apiConnector.executeJson(request);
-    await this.writeToolAudit(tool, result.ok ? "succeeded" : "failed", input, {
-      target: result.metadata.targetUrl,
-      statusCode: result.metadata.statusCode,
-      durationMs: result.metadata.durationMs,
-      errorCode: result.ok ? undefined : result.error.code,
-      errorMessage: result.ok ? undefined : result.error.message
+    let request: ApiRequest;
+    try {
+      request = await this.requestForTool(plugin, tool, input);
+    } catch (error) {
+      const executionError = platformExecutionError(error);
+      await this.writeToolAudit(tool, "failed", input, {
+        target: target.url,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
+        errorCode: executionError.code,
+        errorMessage: executionError.message
+      });
+      return jsonContent(`tool://${name}`, platformErrorResult(name, executionError.code, executionError.message));
+    }
+
+    await this.writeToolAudit(tool, "allowed", input, {
+      target: target.url,
+      policyMode: this.policyForPlugin(tool.pluginId).dangerousMode
     });
-    return jsonContent(`tool://${name}`, toolResultFromConnector(name, result));
+
+    try {
+      const result = await this.apiConnector.executeJson(request);
+      await this.writeToolAudit(tool, result.ok ? "succeeded" : "failed", input, {
+        target: result.metadata.targetUrl,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
+        statusCode: result.metadata.statusCode,
+        durationMs: result.metadata.durationMs,
+        errorCode: result.ok ? undefined : result.error.code,
+        errorMessage: result.ok ? undefined : result.error.message
+      });
+      return jsonContent(`tool://${name}`, toolResultFromConnector(name, result));
+    } catch (error) {
+      const executionError = platformExecutionError(error);
+      await this.writeToolAudit(tool, "failed", input, {
+        target: target.url,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
+        errorCode: executionError.code,
+        errorMessage: executionError.message
+      });
+      return jsonContent(`tool://${name}`, platformErrorResult(name, executionError.code, executionError.message));
+    }
   }
 
   private async requestForTool(plugin: Plugin, tool: PluginTool, input: unknown): Promise<ApiRequest> {
@@ -320,7 +364,7 @@ export class WebMcpGateway {
     }
     const baseUrl = typeof plugin.config.baseUrl === "string" ? plugin.config.baseUrl : undefined;
     if (!baseUrl) {
-      throw new Error(`Plugin ${plugin.id} is missing config.baseUrl.`);
+      throw new PluginExecutionError("PLUGIN_EXECUTION_ERROR", `Plugin ${plugin.id} is missing config.baseUrl.`);
     }
     const normalizedInput = isRecord(input) ? input : {};
     const pathKeys = pathParameterNames(tool.operation.path);
@@ -330,7 +374,7 @@ export class WebMcpGateway {
     for (const requirementId of tool.credentialRefs) {
       const credential = await this.repository.getCredentialForRequirement(plugin.id, requirementId);
       if (!credential) {
-        throw new Error(`Missing credential binding ${requirementId} for plugin ${plugin.id}.`);
+        throw new PluginExecutionError("CREDENTIAL_MISSING", `Missing credential binding ${requirementId} for plugin ${plugin.id}.`);
       }
       credentials.push(credential);
     }
@@ -360,40 +404,40 @@ export class WebMcpGateway {
   }
 
   private async getPlatformPlugin(pluginId: string): Promise<Plugin | undefined> {
-    return (await this.repository.getPlugin(pluginId)) ?? this.platform.registry?.listPlugins().find((plugin) => plugin.id === pluginId);
+    const registryPlugin = this.platform.registry?.listPlugins().find((plugin) => plugin.id === pluginId);
+    if (!registryPlugin) {
+      return undefined;
+    }
+    const storedPlugin = await this.repository.getPlugin(pluginId);
+    return {
+      ...registryPlugin,
+      config: storedPlugin?.config ?? registryPlugin.config,
+      createdAt: storedPlugin?.createdAt,
+      updatedAt: storedPlugin?.updatedAt
+    };
   }
 
-  private async listPlatformPlugins(): Promise<Plugin[]> {
-    const plugins = new Map<string, Plugin>();
-    for (const plugin of this.platform.registry?.listPlugins() ?? []) {
-      plugins.set(plugin.id, plugin);
-    }
-    for (const plugin of await this.repository.listPlugins()) {
-      plugins.set(plugin.id, plugin);
-    }
-    return [...plugins.values()].sort((a, b) => a.name.localeCompare(b.name));
+  private async listPlatformPlugins(): Promise<DecoratedPlugin[]> {
+    const plugins = await Promise.all((this.platform.registry?.listPlugins() ?? []).map((plugin) => this.getPlatformPlugin(plugin.id)));
+    return plugins
+      .filter((plugin): plugin is Plugin => Boolean(plugin))
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((plugin) => this.decoratePlugin(plugin));
   }
 
   private async getPlatformToolByName(name: string): Promise<PluginTool | undefined> {
-    return (await this.repository.getPluginToolByName(name)) ?? this.platform.registry?.getPluginToolByName(name);
+    return this.platform.registry?.getPluginToolByName(name);
   }
 
-  private async listPlatformTools(pluginId: string): Promise<PluginTool[]> {
-    const tools = new Map<string, PluginTool>();
-    for (const tool of this.platform.registry?.listPluginTools(pluginId) ?? []) {
-      tools.set(tool.id, tool);
-    }
-    for (const tool of await this.repository.listPluginTools(pluginId)) {
-      tools.set(tool.id, tool);
-    }
-    return [...tools.values()].sort((a, b) => a.name.localeCompare(b.name));
+  private listPlatformTools(pluginId: string): PluginTool[] {
+    return this.platform.registry?.listPluginTools(pluginId) ?? [];
   }
 
   private async writeToolAudit(
     tool: PluginTool,
     status: "allowed" | "blocked" | "succeeded" | "failed" | "policy_denied",
     input: unknown,
-    patch: { target?: string; statusCode?: number; durationMs?: number; errorCode?: string; errorMessage?: string }
+    patch: { target?: string; policyMode?: string; statusCode?: number; durationMs?: number; errorCode?: string; errorMessage?: string }
   ): Promise<void> {
     if (!this.platform.auditLogger) {
       return;
@@ -405,12 +449,27 @@ export class WebMcpGateway {
       effect: tool.effect,
       status,
       target: patch.target,
-      inputSummary: summarizeInput(input),
+      inputSummary: summarizeInput(input, patch.policyMode),
       statusCode: patch.statusCode,
       durationMs: patch.durationMs,
       errorCode: patch.errorCode,
       errorMessage: patch.errorMessage
     });
+  }
+
+  private policyForPlugin(pluginId: string): PolicyConfig {
+    return this.platform.pluginPolicies?.[pluginId] ?? this.platform.policy ?? {};
+  }
+
+  private decoratePlugin(plugin: Plugin): DecoratedPlugin {
+    const metadata = this.platform.pluginMetadata?.[plugin.id];
+    if (!metadata) {
+      return plugin;
+    }
+    return {
+      ...plugin,
+      ...metadata
+    };
   }
 }
 
@@ -456,14 +515,15 @@ function confirmationTokenFromInput(input: unknown): string | undefined {
   return isRecord(input) && typeof input.confirmationToken === "string" ? input.confirmationToken : undefined;
 }
 
-function summarizeInput(input: unknown): Record<string, unknown> {
+function summarizeInput(input: unknown, policyMode?: string): Record<string, unknown> {
   const summary = summarizeRequest({
     baseUrl: "tool://local",
     method: "POST",
     path: "/tool",
     body: input
   });
-  return summary.body && isRecord(summary.body) ? summary.body : { value: summary.body };
+  const base = summary.body && isRecord(summary.body) ? summary.body : { value: summary.body };
+  return policyMode ? { ...base, _policyMode: policyMode } : base;
 }
 
 function platformErrorResult(operation: string, code: PlatformErrorCode, message: string) {
@@ -492,5 +552,31 @@ function toolResultFromConnector(operation: string, result: ApiConnectorResult) 
     operation,
     error: result.error,
     metadata: result.metadata
+  };
+}
+
+class PluginExecutionError extends Error {
+  constructor(
+    readonly code: Extract<PlatformErrorCode, "CREDENTIAL_MISSING" | "CREDENTIAL_INVALID" | "PLUGIN_EXECUTION_ERROR">,
+    message: string
+  ) {
+    super(message);
+    this.name = "PluginExecutionError";
+  }
+}
+
+function platformExecutionError(error: unknown): {
+  code: Extract<PlatformErrorCode, "CREDENTIAL_MISSING" | "CREDENTIAL_INVALID" | "PLUGIN_EXECUTION_ERROR">;
+  message: string;
+} {
+  if (error instanceof PluginExecutionError || error instanceof CredentialResolutionError) {
+    return {
+      code: error.code,
+      message: error.message
+    };
+  }
+  return {
+    code: "PLUGIN_EXECUTION_ERROR",
+    message: error instanceof Error ? error.message : "Unknown plugin execution error."
   };
 }

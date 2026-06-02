@@ -4,6 +4,7 @@ export interface ServerConfig {
   publicBaseUrl: string;
   mcpServerUrl: string;
   databaseUrl?: string;
+  pluginDir?: string;
   fetchTimeoutMs: number;
   fetchRateLimitPerMinute: number;
   requestLogging: boolean;
@@ -19,6 +20,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): ServerConfig {
     publicBaseUrl,
     mcpServerUrl: env.MCP_SERVER_URL ?? `${publicBaseUrl}/mcp`,
     databaseUrl: env.DATABASE_URL,
+    pluginDir: env.MCPHUB_PLUGIN_DIR,
     fetchTimeoutMs: Number(env.FETCH_TIMEOUT_MS ?? 10000),
     fetchRateLimitPerMinute: Number(env.FETCH_RATE_LIMIT_PER_MINUTE ?? 60),
     requestLogging: env.REQUEST_LOGGING !== "false",
