@@ -93,6 +93,8 @@
 | 持久化 repository 不能作为插件执行权威 | 最终评审指出 stale repository tool 可绕过当前目录状态，已修复为 `tools/list`、插件资源和 `tools/call` 只认当前启动时 registry |
 | 运行时配置/凭据失败需要明确平台错误码 | 最终评审指出 `baseUrl` / credential binding / env secret 缺失不能只冒泡为 `MCP_GATEWAY_ERROR`，已修复为 `PLUGIN_EXECUTION_ERROR` / `CREDENTIAL_MISSING` 并补失败审计 |
 | 最终评审问题已修复并回归 | 已补 `packages/plugins/src/local-loader.test.ts`、`packages/mcp/src/gateway.test.ts`，并通过 focused tests 和 `pnpm typecheck` |
+| 插件自定义执行器是 P2 核心方向 | 用户确认 B 站上传视频这类能力需要插件自定义 executor，支持校验、上传、提交等多 API 多步骤流程，而不是只靠声明式 HTTP operation |
+| 插件 executor 需要与 MCPHub 核心解耦 | MCPHub 应提供 `execute(input, context)` 运行契约和受控 context，插件负责业务流程、结果清洗和多接口编排，平台负责加载、策略、凭据、审计和错误边界 |
 
 ## 平台化演进草案
 
@@ -110,6 +112,7 @@ MCPHub 应从单一 Web 内容抽取服务升级为通用 MCP 适配平台。平
 | 审计日志 | 记录 AI 调用了哪个 tool、参数摘要、目标服务、结果、错误 | P0 |
 | 网页自动化适配 | 对无 API 的网站通过浏览器自动化执行操作 | P2，风险和复杂度高 |
 | 公共插件市场 | 分享和审核第三方适配器 | P2，需先有安全模型 |
+| 插件自定义执行器 | 支持插件实现 `execute(input, context)`，用于复杂 API 编排、上传、清洗、聚合和业务级 workflow | P2 |
 
 ### 三种可选架构
 | 方案 | 内容 | 优点 | 代价 |
