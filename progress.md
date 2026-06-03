@@ -259,7 +259,7 @@
   - 用户确认后再进入代码实现。
 
 ### 阶段 15：插件自定义执行器 P2 规划
-- **状态：** pending
+- **状态：** in_progress
 - **开始时间：** 2026-06-03 CST
 - 执行的操作：
   - 用户确认当前本地插件第一版可行，但后续重点应放在第二版：插件自定义执行器。
@@ -267,7 +267,13 @@
   - 确认该能力应作为后续发展阶段规划，而不是塞进当前声明式 HTTP operation。
   - 在 `task_plan.md` 中新增阶段 15：插件自定义执行器 P2 设计。
   - 在 `findings.md` 中记录 executor runtime 的边界：插件负责业务 workflow，MCPHub 负责加载、策略、凭据、审计和错误边界。
+  - 用户确认阶段 15 同时完成设计文档和实施计划，并认可“保留声明式 HTTP 插件，新增自定义 executor tool”路线。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md`。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md`。
+  - 设计范围明确为 P2 executor runtime，不实现真实 B 站上传插件；使用 fake multi-step upload fixture 作为验收用例。
 - 创建/修改的文件：
+  - `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md`
+  - `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md`
   - `task_plan.md`
   - `findings.md`
   - `progress.md`

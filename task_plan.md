@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 14：本地插件加载 P1 实现、验证与收尾
+阶段 15：插件自定义执行器 P2 设计与实施计划审阅
 
 ## 各阶段
 
@@ -126,13 +126,16 @@
 - **状态：** complete
 
 ### 阶段 15：插件自定义执行器 P2 设计
-- [ ] 明确插件自定义 executor 的能力边界：单接口声明式 HTTP、插件内多步骤 workflow、复杂结果清洗和聚合
-- [ ] 设计插件 executor 契约：`execute(input, context)`、`context.http`、`context.credentials`、`context.config`、`context.audit/log`
-- [ ] 设计多步骤工具执行模型：校验、预检查、分片上传、提交、轮询、失败补偿和可恢复错误
-- [ ] 设计安全模型：危险操作 effect、dry-run/preflight、幂等键、审计步骤摘要、secret 不入上下文
-- [ ] 以 B 站上传视频插件作为目标用例，验证 executor 能覆盖多个 API 调用和复杂流程
-- [ ] 写入新的设计文档 `docs/superpowers/specs/YYYY-MM-DD-plugin-executor-runtime-design.md`
-- **状态：** pending
+- [x] 明确插件自定义 executor 的能力边界：单接口声明式 HTTP、插件内多步骤 workflow、复杂结果清洗和聚合
+- [x] 设计插件 executor 契约：`execute(input, context)`、`context.http`、`context.credentials`、`context.config`、`context.audit/log`
+- [x] 设计多步骤工具执行模型：校验、预检查、分片上传、提交、轮询、失败补偿和可恢复错误
+- [x] 设计安全模型：危险操作 effect、dry-run/preflight、幂等键、审计步骤摘要、secret 不入上下文
+- [x] 以 B 站上传视频插件作为目标用例，验证 executor 能覆盖多个 API 调用和复杂流程
+- [x] 写入新的设计文档 `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md`
+- [x] 写入实施计划 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md`
+- [ ] 用户审阅插件自定义执行器 P2 设计文档和实施计划
+- [ ] 用户确认后进入代码实现
+- **状态：** in_progress
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
@@ -169,6 +172,7 @@
 | 本地插件加载 P1 设计文档已获批 | 用户确认设计文档没有问题，并要求继续进入实施计划 |
 | 本地插件加载 P1 实施计划已写入 | `docs/superpowers/plans/2026-06-03-local-plugin-loading-implementation-plan.md` |
 | 插件自定义执行器进入后续 P2 | 用户确认第二版重点是插件自定义 executor，可支撑 B 站上传视频这类多 API、多步骤 workflow tool |
+| 插件自定义执行器设计和实施计划已写入 | `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md` 和 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md` |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |

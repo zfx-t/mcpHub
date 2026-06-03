@@ -95,6 +95,8 @@
 | 最终评审问题已修复并回归 | 已补 `packages/plugins/src/local-loader.test.ts`、`packages/mcp/src/gateway.test.ts`，并通过 focused tests 和 `pnpm typecheck` |
 | 插件自定义执行器是 P2 核心方向 | 用户确认 B 站上传视频这类能力需要插件自定义 executor，支持校验、上传、提交等多 API 多步骤流程，而不是只靠声明式 HTTP operation |
 | 插件 executor 需要与 MCPHub 核心解耦 | MCPHub 应提供 `execute(input, context)` 运行契约和受控 context，插件负责业务流程、结果清洗和多接口编排，平台负责加载、策略、凭据、审计和错误边界 |
+| 插件 executor 设计采用双模式 | 保留 P1 `operation.type = "http"` 声明式工具，同时新增 `executor.type = "module"` 和 handler workflow，确保简单 REST 与复杂 workflow 都能表达 |
+| 插件 executor 实施计划聚焦假上传 fixture | P2 不引入真实 B 站上传实现，用 fake multi-step upload plugin 验证校验、分片、提交、轮询、audit checkpoint 和 dangerous policy |
 
 ## 平台化演进草案
 
