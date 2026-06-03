@@ -185,6 +185,7 @@ export interface PluginTool {
   requiresConfirmation: boolean;
   credentialRefs: string[];
   operation?: PluginToolOperation;
+  executor?: PluginToolExecutor;
   enabled: boolean;
 }
 
@@ -195,6 +196,13 @@ export interface HttpPluginToolOperation {
 }
 
 export type PluginToolOperation = HttpPluginToolOperation;
+
+export interface ModulePluginToolExecutor {
+  type: "module";
+  handler: string;
+}
+
+export type PluginToolExecutor = ModulePluginToolExecutor;
 
 export interface Credential {
   id: string;

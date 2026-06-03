@@ -10,7 +10,7 @@ import {
 } from "@mcphub/core";
 import { z } from "zod";
 import { pluginRecordFromManifest, pluginToolsFromManifest } from "./registry.js";
-import type { PluginManifest } from "./sdk.js";
+import type { PluginHandlers, PluginManifest } from "./sdk.js";
 
 export const MCPHUB_PLUGIN_DIR_ENV = "MCPHUB_PLUGIN_DIR";
 
@@ -52,6 +52,8 @@ export type LocalPluginDiagnosticCode =
   | "credential_binding_missing"
   | "credential_binding_type_mismatch"
   | "credential_binding_unknown"
+  | "executor_handler_missing"
+  | "executor_handler_invalid"
   | "duplicate_plugin_id"
   | "duplicate_tool_name"
   | "disabled_plugin"
@@ -77,6 +79,7 @@ export interface LocalPluginSeedData {
 
 export interface LocalPluginLoadResult {
   manifests: PluginManifest[];
+  handlers: Record<string, PluginHandlers>;
   policies: Record<string, LocalPluginPolicyConfig>;
   diagnostics: LocalPluginDiagnostic[];
   seed: LocalPluginSeedData;
@@ -148,10 +151,11 @@ export async function loadLocalPlugins(options: LoadLocalPluginsOptions = {}): P
       continue;
     }
 
-    const manifest = await loadPluginManifest(entryPath, Number(entryStats.stats.mtimeMs), pluginPath, result.diagnostics);
-    if (!manifest) {
+    const loadedModule = await loadPluginManifest(entryPath, Number(entryStats.stats.mtimeMs), pluginPath, result.diagnostics);
+    if (!loadedModule) {
       continue;
     }
+    const { manifest, handlers } = loadedModule;
 
     const duplicateTool = manifest.tools.find((tool) => seenToolNames.has(tool.name));
     if (duplicateTool) {
@@ -174,6 +178,12 @@ export async function loadLocalPlugins(options: LoadLocalPluginsOptions = {}): P
       continue;
     }
 
+    const handlerDiagnostics = validateExecutorHandlers(manifest, handlers, pluginPath, entryPath);
+    if (handlerDiagnostics.length > 0) {
+      result.diagnostics.push(...handlerDiagnostics);
+      continue;
+    }
+
     if (seenPluginIds.has(manifest.id)) {
       result.diagnostics.push({
         code: "duplicate_plugin_id",
@@ -193,6 +203,9 @@ export async function loadLocalPlugins(options: LoadLocalPluginsOptions = {}): P
     }
 
     result.manifests.push(manifest);
+    if (Object.keys(handlers).length > 0) {
+      result.handlers[manifest.id] = handlers;
+    }
     result.policies[manifest.id] = parsedConfig.policy;
     result.seed.plugins.push(pluginRecordFromLocalPlugin(manifest, parsedConfig));
     result.seed.pluginTools.push(...pluginToolsFromManifest(manifest));
@@ -214,6 +227,7 @@ export async function loadLocalPlugins(options: LoadLocalPluginsOptions = {}): P
 function createEmptyLoadResult(): LocalPluginLoadResult {
   return {
     manifests: [],
+    handlers: {},
     policies: {},
     diagnostics: [],
     seed: {
@@ -321,7 +335,7 @@ async function loadPluginManifest(
   mtimeMs: number,
   pluginDir: string,
   diagnostics: LocalPluginDiagnostic[]
-): Promise<PluginManifest | undefined> {
+): Promise<{ manifest: PluginManifest; handlers: PluginHandlers } | undefined> {
   let importedModule: unknown;
   try {
     const moduleUrl = new URL(`?mtime=${mtimeMs}`, pathToFileURL(entryPath).href);
@@ -338,7 +352,8 @@ async function loadPluginManifest(
     return undefined;
   }
 
-  const parsedManifest = pluginManifestSchema.safeParse((importedModule as { default?: unknown }).default);
+  const defaultExport = (importedModule as { default?: unknown }).default;
+  const parsedManifest = pluginManifestSchema.safeParse(defaultExport);
   if (!parsedManifest.success) {
     diagnostics.push({
       code: "manifest_validation_error",
@@ -351,7 +366,10 @@ async function loadPluginManifest(
     return undefined;
   }
 
-  return parsedManifest.data;
+  return {
+    manifest: parsedManifest.data,
+    handlers: readPluginHandlers(defaultExport)
+  };
 }
 
 function validateCredentialBindings(
@@ -408,6 +426,58 @@ function validateCredentialBindings(
   }
 
   return diagnostics;
+}
+
+function validateExecutorHandlers(
+  manifest: PluginManifest,
+  handlers: PluginHandlers,
+  pluginDir: string,
+  entryPath: string
+): LocalPluginDiagnostic[] {
+  const diagnostics: LocalPluginDiagnostic[] = [];
+  for (const tool of manifest.tools) {
+    if (!tool.executor) {
+      continue;
+    }
+    const handler = handlers[tool.executor.handler];
+    if (handler === undefined) {
+      diagnostics.push({
+        code: "executor_handler_missing",
+        severity: "error",
+        message: `Local plugin ${manifest.id} tool ${tool.name} references missing executor handler ${tool.executor.handler}.`,
+        pluginDir,
+        pluginId: manifest.id,
+        toolName: tool.name,
+        entryPath,
+        details: { handler: tool.executor.handler }
+      });
+      continue;
+    }
+    if (typeof handler !== "function") {
+      diagnostics.push({
+        code: "executor_handler_invalid",
+        severity: "error",
+        message: `Local plugin ${manifest.id} executor handler ${tool.executor.handler} for tool ${tool.name} is not a function.`,
+        pluginDir,
+        pluginId: manifest.id,
+        toolName: tool.name,
+        entryPath,
+        details: { handler: tool.executor.handler, actualType: typeof handler }
+      });
+    }
+  }
+  return diagnostics;
+}
+
+function readPluginHandlers(defaultExport: unknown): PluginHandlers {
+  if (!defaultExport || typeof defaultExport !== "object" || !("handlers" in defaultExport)) {
+    return {};
+  }
+  const handlers = (defaultExport as { handlers?: unknown }).handlers;
+  if (!handlers || typeof handlers !== "object" || Array.isArray(handlers)) {
+    return {};
+  }
+  return handlers as PluginHandlers;
 }
 
 function pluginRecordFromLocalPlugin(manifest: PluginManifest, config: LocalPluginConfig): Plugin {

@@ -100,6 +100,11 @@ export const pluginToolOperationSchema = z.object({
   path: z.string().regex(/^\//, { message: "HTTP operation paths must start with /." })
 });
 
+export const pluginToolExecutorSchema = z.object({
+  type: z.literal("module"),
+  handler: z.string().min(1)
+});
+
 export const toolEffectSchema = z.enum(["read", "write", "dangerous"]);
 
 export const credentialTypeSchema = z.enum(["bearer", "api_key_header", "api_key_query", "basic", "cookie", "env"]);
@@ -144,8 +149,9 @@ export const pluginToolSchema = z.object({
   requiresConfirmation: z.boolean(),
   credentialRefs: z.array(z.string().min(1)).default([]),
   operation: pluginToolOperationSchema.optional(),
+  executor: pluginToolExecutorSchema.optional(),
   enabled: z.boolean()
-});
+}).superRefine(refineToolExecutionMode);
 
 export const credentialSchema = z.object({
   id: z.string().min(1),
@@ -188,8 +194,27 @@ export const pluginToolDefinitionSchema = z.object({
   effect: toolEffectSchema,
   requiresConfirmation: z.boolean().optional(),
   credentialRefs: z.array(z.string().min(1)).default([]),
-  operation: pluginToolOperationSchema.optional()
-});
+  operation: pluginToolOperationSchema.optional(),
+  executor: pluginToolExecutorSchema.optional()
+}).superRefine(refineToolExecutionMode);
+
+function refineToolExecutionMode(tool: { operation?: unknown; executor?: unknown }, context: z.RefinementCtx): void {
+  if (tool.operation && tool.executor) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Plugin tools must define either operation or executor, not both.",
+      path: ["executor"]
+    });
+    return;
+  }
+  if (!tool.operation && !tool.executor) {
+    context.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Plugin tools must define either operation or executor.",
+      path: ["operation"]
+    });
+  }
+}
 
 export const pluginManifestSchema = z
   .object({

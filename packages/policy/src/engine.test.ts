@@ -21,6 +21,7 @@ const readTool: PluginTool = {
   effect: "read",
   requiresConfirmation: false,
   credentialRefs: [],
+  operation: { type: "http", method: "GET", path: "/users" },
   enabled: true
 };
 

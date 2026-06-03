@@ -17,7 +17,8 @@ export const webContentPlugin = definePlugin({
           filters: { type: "object" }
         }
       },
-      effect: "read"
+      effect: "read",
+      executor: { type: "module", handler: "sourceSearch" }
     },
     {
       name: "source.refresh",
@@ -30,7 +31,8 @@ export const webContentPlugin = definePlugin({
           mode: { type: "string" }
         }
       },
-      effect: "write"
+      effect: "write",
+      executor: { type: "module", handler: "sourceRefresh" }
     },
     {
       name: "extract.preview",
@@ -43,7 +45,8 @@ export const webContentPlugin = definePlugin({
           sourceId: { type: "string" }
         }
       },
-      effect: "read"
+      effect: "read",
+      executor: { type: "module", handler: "extractPreview" }
     },
     {
       name: "debug.explain",
@@ -55,7 +58,8 @@ export const webContentPlugin = definePlugin({
           itemId: { type: "string" }
         }
       },
-      effect: "read"
+      effect: "read",
+      executor: { type: "module", handler: "debugExplain" }
     }
   ]
 });

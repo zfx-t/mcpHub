@@ -97,7 +97,8 @@ describe("loadLocalPlugins", () => {
       expect.objectContaining({
         pluginId: "admin-users-local",
         name: "admin.users.listlocal",
-        enabled: true
+        enabled: true,
+        operation: { type: "http", method: "GET", path: "/status" }
       })
     ]);
     expect(result.seed.credentials).toEqual([
@@ -113,6 +114,95 @@ describe("loadLocalPlugins", () => {
       expect.objectContaining({
         code: "loaded_plugin",
         pluginId: "admin-users-local"
+      })
+    ]);
+  });
+
+  it("loads executor handlers for valid local executor plugins", async () => {
+    const pluginDir = await createTempPluginDir();
+    await writeLocalPlugin(pluginDir, "workflow-plugin", {
+      entry: executorPluginModule({
+        id: "workflow-plugin",
+        toolName: "workflow.upload.video",
+        handlerName: "uploadVideo",
+        handlerSource: "async () => ({ ok: true })"
+      }),
+      config: {
+        enabled: true,
+        config: { baseUrl: "https://workflow.example.test" },
+        credentials: {}
+      } satisfies LocalPluginConfigInput
+    });
+
+    const result = await loadLocalPlugins({ pluginDir });
+
+    expect(result.manifests.map((manifest) => manifest.id)).toEqual(["workflow-plugin"]);
+    expect(result.seed.pluginTools).toEqual([
+      expect.objectContaining({
+        pluginId: "workflow-plugin",
+        name: "workflow.upload.video",
+        executor: { type: "module", handler: "uploadVideo" },
+        operation: undefined
+      })
+    ]);
+    expect(result.handlers["workflow-plugin"]?.uploadVideo).toEqual(expect.any(Function));
+    await expect(result.handlers["workflow-plugin"]?.uploadVideo({}, {} as never)).resolves.toEqual({ ok: true });
+  });
+
+  it("skips executor plugins with a missing referenced handler", async () => {
+    const pluginDir = await createTempPluginDir();
+    await writeLocalPlugin(pluginDir, "missing-handler", {
+      entry: executorPluginModule({
+        id: "missing-handler",
+        toolName: "workflow.upload.missing",
+        handlerName: "uploadVideo",
+        handlersSource: "{}"
+      }),
+      config: {
+        enabled: true,
+        config: {},
+        credentials: {}
+      } satisfies LocalPluginConfigInput
+    });
+
+    const result = await loadLocalPlugins({ pluginDir });
+
+    expect(result.manifests).toEqual([]);
+    expect(result.handlers).toEqual({});
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "executor_handler_missing",
+        pluginId: "missing-handler",
+        toolName: "workflow.upload.missing"
+      })
+    ]);
+  });
+
+  it("skips executor plugins with a non-function referenced handler", async () => {
+    const pluginDir = await createTempPluginDir();
+    await writeLocalPlugin(pluginDir, "invalid-handler", {
+      entry: executorPluginModule({
+        id: "invalid-handler",
+        toolName: "workflow.upload.invalid",
+        handlerName: "uploadVideo",
+        handlerSource: "42"
+      }),
+      config: {
+        enabled: true,
+        config: {},
+        credentials: {}
+      } satisfies LocalPluginConfigInput
+    });
+
+    const result = await loadLocalPlugins({ pluginDir });
+
+    expect(result.manifests).toEqual([]);
+    expect(result.handlers).toEqual({});
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "executor_handler_invalid",
+        pluginId: "invalid-handler",
+        toolName: "workflow.upload.invalid"
       })
     ]);
   });
@@ -342,4 +432,34 @@ function pluginModule(input: { id: string; toolName: string; credentialId?: stri
     null,
     2
   )};\n`;
+}
+
+function executorPluginModule(input: {
+  id: string;
+  toolName: string;
+  handlerName: string;
+  handlerSource?: string;
+  handlersSource?: string;
+}) {
+  const handlersSource = input.handlersSource ?? `{ ${JSON.stringify(input.handlerName)}: ${input.handlerSource ?? "async () => ({ ok: true })"} }`;
+  return `export default {
+  id: ${JSON.stringify(input.id)},
+  name: ${JSON.stringify(input.id)},
+  version: "0.1.0",
+  type: "custom",
+  description: ${JSON.stringify(`${input.id} plugin`)},
+  tools: [
+    {
+      name: ${JSON.stringify(input.toolName)},
+      description: ${JSON.stringify(`Tool ${input.toolName}`)},
+      inputSchema: { type: "object" },
+      effect: "write",
+      executor: {
+        type: "module",
+        handler: ${JSON.stringify(input.handlerName)}
+      }
+    }
+  ],
+  handlers: ${handlersSource}
+};\n`;
 }

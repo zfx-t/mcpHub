@@ -70,6 +70,7 @@ export function pluginToolsFromManifest(manifest: PluginManifest): PluginTool[] 
     requiresConfirmation: tool.requiresConfirmation ?? tool.effect === "dangerous",
     credentialRefs: tool.credentialRefs,
     operation: tool.operation,
+    executor: tool.executor,
     enabled: true
   }));
 }

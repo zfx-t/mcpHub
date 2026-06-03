@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { defineApiTool, definePlugin, PluginRegistry, sampleAdminPlugin, webContentPlugin } from "./index.js";
+import { defineApiTool, defineExecutorTool, definePlugin, PluginRegistry, sampleAdminPlugin, webContentPlugin } from "./index.js";
 
 describe("plugin SDK", () => {
   it("defines API tools while preserving REST metadata", () => {
@@ -20,6 +20,46 @@ describe("plugin SDK", () => {
       operation: { type: "http", method: "GET", path: "/api/users" },
       credentialRefs: ["admin-token"]
     });
+  });
+
+  it("defines executor tools while preserving handler metadata", () => {
+    expect(
+      defineExecutorTool({
+        name: "workflow.upload.video",
+        description: "Upload video.",
+        inputSchema: { type: "object" },
+        effect: "write",
+        handler: "uploadVideo",
+        credentialRefs: ["session-cookie"]
+      })
+    ).toMatchObject({
+      name: "workflow.upload.video",
+      executor: { type: "module", handler: "uploadVideo" },
+      credentialRefs: ["session-cookie"]
+    });
+  });
+
+  it("preserves plugin handlers on defined manifests", () => {
+    const uploadVideo = async () => ({ ok: true });
+    const plugin = definePlugin({
+      id: "workflow-plugin",
+      name: "Workflow Plugin",
+      version: "0.1.0",
+      type: "custom",
+      description: "Executor plugin.",
+      tools: [
+        defineExecutorTool({
+          name: "workflow.upload.video",
+          description: "Upload video.",
+          inputSchema: {},
+          effect: "write",
+          handler: "uploadVideo"
+        })
+      ],
+      handlers: { uploadVideo }
+    });
+
+    expect(plugin.handlers?.uploadVideo).toBe(uploadVideo);
   });
 });
 
@@ -71,7 +111,16 @@ describe("PluginRegistry", () => {
       version: "0.1.0",
       type: "api",
       description: "Expose admin users.",
-      tools: [{ name: "admin.users.list", description: "List users.", inputSchema: {}, effect: "read" }]
+      tools: [
+        defineApiTool({
+          name: "admin.users.list",
+          description: "List users.",
+          inputSchema: {},
+          effect: "read",
+          method: "GET",
+          path: "/api/users"
+        })
+      ]
     });
     const second = definePlugin({
       id: "admin-users-copy",
@@ -79,7 +128,16 @@ describe("PluginRegistry", () => {
       version: "0.1.0",
       type: "api",
       description: "Expose duplicate admin users.",
-      tools: [{ name: "admin.users.list", description: "List users again.", inputSchema: {}, effect: "read" }]
+      tools: [
+        defineApiTool({
+          name: "admin.users.list",
+          description: "List users again.",
+          inputSchema: {},
+          effect: "read",
+          method: "GET",
+          path: "/api/users"
+        })
+      ]
     });
     expect(() => new PluginRegistry([first, second])).toThrow(/Duplicate plugin tool name/);
   });
@@ -113,6 +171,37 @@ describe("PluginRegistry", () => {
     expect(registry.listPluginTools()).toEqual([
       expect.objectContaining({ name: "admin.users.disable", effect: "dangerous", operation: expect.objectContaining({ method: "POST" }) }),
       expect.objectContaining({ name: "admin.users.list", effect: "read", operation: expect.objectContaining({ method: "GET" }) })
+    ]);
+  });
+
+  it("preserves executor metadata in registry plugin tools", () => {
+    const plugin = definePlugin({
+      id: "workflow-plugin",
+      name: "Workflow Plugin",
+      version: "0.1.0",
+      type: "custom",
+      description: "Executor plugin.",
+      tools: [
+        defineExecutorTool({
+          name: "workflow.upload.video",
+          description: "Upload video.",
+          inputSchema: {},
+          effect: "write",
+          handler: "uploadVideo"
+        })
+      ],
+      handlers: {
+        uploadVideo: async () => ({ ok: true })
+      }
+    });
+    const registry = new PluginRegistry([plugin]);
+
+    expect(registry.listPluginTools()).toEqual([
+      expect.objectContaining({
+        name: "workflow.upload.video",
+        executor: { type: "module", handler: "uploadVideo" },
+        operation: undefined
+      })
     ]);
   });
 });

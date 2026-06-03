@@ -22,6 +22,7 @@ const tool: PluginTool = {
   effect: "dangerous",
   requiresConfirmation: true,
   credentialRefs: [],
+  operation: { type: "http", method: "POST", path: "/users/{id}/disable" },
   enabled: true
 };
 

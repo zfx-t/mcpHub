@@ -82,7 +82,8 @@ describe("platform schemas", () => {
             description: "Disable a user.",
             inputSchema: { type: "object", required: ["id"], properties: { id: { type: "string" } } },
             effect: "dangerous",
-            requiresConfirmation: true
+            requiresConfirmation: true,
+            operation: { type: "http", method: "POST", path: "/api/users/{id}/disable" }
           }
         ]
       })
@@ -123,7 +124,8 @@ describe("platform schemas", () => {
             description: "List users.",
             inputSchema: {},
             effect: "read",
-            credentialRefs: ["missing-token"]
+            credentialRefs: ["missing-token"],
+            operation: { type: "http", method: "GET", path: "/api/users" }
           }
         ]
       })
@@ -138,7 +140,15 @@ describe("platform schemas", () => {
         version: "0.1.0",
         type: "api",
         description: "Bad plugin id.",
-        tools: [{ name: "Users.list", description: "Bad tool name.", inputSchema: {}, effect: "read" }]
+        tools: [
+          {
+            name: "Users.list",
+            description: "Bad tool name.",
+            inputSchema: {},
+            effect: "read",
+            operation: { type: "http", method: "GET", path: "/api/users" }
+          }
+        ]
       })
     ).toThrow();
   });
@@ -148,7 +158,8 @@ describe("platform schemas", () => {
       name: "admin.users.list",
       description: "List users.",
       inputSchema: {},
-      effect: "read"
+      effect: "read",
+      operation: { type: "http", method: "GET", path: "/api/users" }
     };
     expect(() =>
       pluginManifestSchema.parse({
@@ -160,6 +171,94 @@ describe("platform schemas", () => {
         tools: [tool, tool]
       })
     ).toThrow(/Duplicate tool name/);
+  });
+
+  it("accepts HTTP-only plugin tools", () => {
+    const manifest = pluginManifestSchema.parse({
+      id: "http-tools",
+      name: "HTTP Tools",
+      version: "0.1.0",
+      type: "api",
+      description: "HTTP tool.",
+      tools: [
+        {
+          name: "http.users.list",
+          description: "List users.",
+          inputSchema: {},
+          effect: "read",
+          operation: { type: "http", method: "GET", path: "/api/users" }
+        }
+      ]
+    });
+
+    expect(manifest.tools[0]).toMatchObject({
+      operation: { type: "http", method: "GET", path: "/api/users" }
+    });
+  });
+
+  it("accepts executor-only plugin tools", () => {
+    const manifest = pluginManifestSchema.parse({
+      id: "executor-tools",
+      name: "Executor Tools",
+      version: "0.1.0",
+      type: "custom",
+      description: "Executor tool.",
+      tools: [
+        {
+          name: "workflow.upload.video",
+          description: "Upload video.",
+          inputSchema: {},
+          effect: "write",
+          executor: { type: "module", handler: "uploadVideo" }
+        }
+      ]
+    });
+
+    expect(manifest.tools[0]).toMatchObject({
+      executor: { type: "module", handler: "uploadVideo" }
+    });
+  });
+
+  it("rejects plugin tools with both HTTP operation and executor", () => {
+    expect(() =>
+      pluginManifestSchema.parse({
+        id: "bad-tools",
+        name: "Bad Tools",
+        version: "0.1.0",
+        type: "custom",
+        description: "Bad tool.",
+        tools: [
+          {
+            name: "bad.tools.dual",
+            description: "Invalid tool.",
+            inputSchema: {},
+            effect: "write",
+            operation: { type: "http", method: "POST", path: "/api/do" },
+            executor: { type: "module", handler: "doWork" }
+          }
+        ]
+      })
+    ).toThrow(/either operation or executor, not both/);
+  });
+
+  it("rejects plugin tools with neither HTTP operation nor executor", () => {
+    expect(() =>
+      pluginManifestSchema.parse({
+        id: "missing-mode",
+        name: "Missing Mode",
+        version: "0.1.0",
+        type: "custom",
+        description: "Missing mode.",
+        tools: [
+          {
+            name: "bad.tools.missing",
+            description: "Invalid tool.",
+            inputSchema: {},
+            effect: "read"
+          }
+        ]
+      })
+    ).toThrow(/must define either operation or executor/);
   });
 
   it("accepts the validated rule type", () => {
