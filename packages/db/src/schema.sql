@@ -99,8 +99,11 @@ CREATE TABLE IF NOT EXISTS plugin_tools (
   requires_confirmation BOOLEAN NOT NULL,
   credential_refs JSONB NOT NULL,
   operation JSONB,
+  executor JSONB,
   enabled BOOLEAN NOT NULL
 );
+
+ALTER TABLE plugin_tools ADD COLUMN IF NOT EXISTS executor JSONB;
 
 CREATE TABLE IF NOT EXISTS credentials (
   id TEXT PRIMARY KEY,

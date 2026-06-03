@@ -80,6 +80,7 @@ export async function createPlatformServices(input: PlatformServicesInput): Prom
     credentialStore: new EnvironmentCredentialStore({ env: input.env }),
     auditLogger: new AuditLogger({ repository: input.repository }),
     pluginPolicies,
-    pluginMetadata
+    pluginMetadata,
+    executorHandlers: localPlugins.handlers
   };
 }

@@ -4,7 +4,14 @@ import { AuditLogger } from "@mcphub/audit";
 import { EnvironmentCredentialStore } from "@mcphub/credentials";
 import { createSeedRepository } from "@mcphub/db";
 import { ExtractionService, FixtureFetcher } from "@mcphub/extractors";
-import { PluginRegistry, pluginRecordFromManifest, pluginToolsFromManifest, sampleAdminPlugin } from "@mcphub/plugins";
+import {
+  defineExecutorTool,
+  definePlugin,
+  PluginRegistry,
+  pluginRecordFromManifest,
+  pluginToolsFromManifest,
+  sampleAdminPlugin
+} from "@mcphub/plugins";
 import { WebMcpGateway } from "./index.js";
 
 const fixtureHtml = `
@@ -165,6 +172,119 @@ describe("WebMcpGateway", () => {
     );
   });
 
+  it("lists and executes executor plugin tools", async () => {
+    let handlerCalls = 0;
+    const repo = createSeedRepository();
+    const plugin = executorPlugin();
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(plugin), config: { baseUrl: "https://workflow.example.test" } });
+    for (const tool of pluginToolsFromManifest(plugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      registry: new PluginRegistry([plugin]),
+      auditLogger: new AuditLogger({ repository: repo }),
+      executorHandlers: {
+        "workflow-plugin": {
+          uploadVideo: async (input, context) => {
+            handlerCalls += 1;
+            await context.checkpoint("validated", { title: (input as { title?: unknown }).title, token: "secret-token" });
+            return { ok: true, uploadId: "upload-1" };
+          }
+        }
+      }
+    });
+
+    expect(gateway.listTools()).toEqual(expect.arrayContaining([expect.objectContaining({ name: "workflow.upload.video" })]));
+
+    const result = JSON.parse((await gateway.callTool("workflow.upload.video", { title: "Demo" }))[0].text) as {
+      ok: boolean;
+      data: { uploadId: string };
+    };
+
+    expect(result).toEqual({ ok: true, operation: "workflow.upload.video", data: { ok: true, uploadId: "upload-1" } });
+    expect(handlerCalls).toBe(1);
+    await expect(repo.listAuditRecords({ toolName: "workflow.upload.video" })).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "allowed" }),
+        expect.objectContaining({
+          status: "succeeded",
+          inputSummary: expect.objectContaining({ _checkpointStep: "validated", title: "Demo", token: "[REDACTED]" })
+        }),
+        expect.objectContaining({ status: "succeeded" })
+      ])
+    );
+  });
+
+  it("blocks dangerous executor tools before invoking handlers", async () => {
+    let handlerCalls = 0;
+    const repo = createSeedRepository();
+    const plugin = executorPlugin({ effect: "dangerous" });
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(plugin), config: { baseUrl: "https://workflow.example.test" } });
+    for (const tool of pluginToolsFromManifest(plugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      registry: new PluginRegistry([plugin]),
+      auditLogger: new AuditLogger({ repository: repo }),
+      pluginPolicies: { "workflow-plugin": { dangerousMode: "block" } },
+      executorHandlers: {
+        "workflow-plugin": {
+          uploadVideo: () => {
+            handlerCalls += 1;
+            return { ok: true };
+          }
+        }
+      }
+    });
+
+    const result = JSON.parse((await gateway.callTool("workflow.upload.video", { title: "Demo" }))[0].text) as {
+      ok: boolean;
+      error: { code: string };
+    };
+
+    expect(result).toMatchObject({ ok: false, error: { code: "CONFIRMATION_REQUIRED" } });
+    expect(handlerCalls).toBe(0);
+    await expect(repo.listAuditRecords({ toolName: "workflow.upload.video" })).resolves.toEqual([
+      expect.objectContaining({ status: "blocked", errorCode: "CONFIRMATION_REQUIRED" })
+    ]);
+  });
+
+  it("executes dangerous executor tools under auditOnly and records policy evidence", async () => {
+    let handlerCalls = 0;
+    const repo = createSeedRepository();
+    const plugin = executorPlugin({ effect: "dangerous" });
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(plugin), config: { baseUrl: "https://workflow.example.test" } });
+    for (const tool of pluginToolsFromManifest(plugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      registry: new PluginRegistry([plugin]),
+      auditLogger: new AuditLogger({ repository: repo }),
+      pluginPolicies: { "workflow-plugin": { dangerousMode: "auditOnly" } },
+      executorHandlers: {
+        "workflow-plugin": {
+          uploadVideo: () => {
+            handlerCalls += 1;
+            return { ok: true };
+          }
+        }
+      }
+    });
+
+    const result = JSON.parse((await gateway.callTool("workflow.upload.video", { title: "Demo" }))[0].text) as {
+      ok: boolean;
+    };
+
+    expect(result).toMatchObject({ ok: true });
+    expect(handlerCalls).toBe(1);
+    await expect(repo.listAuditRecords({ toolName: "workflow.upload.video" })).resolves.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ status: "allowed", inputSummary: expect.objectContaining({ _policyMode: "auditOnly" }) }),
+        expect.objectContaining({ status: "succeeded", inputSummary: expect.objectContaining({ _policyMode: "auditOnly" }) })
+      ])
+    );
+  });
+
   it("does not execute tools that exist only in persisted repository state", async () => {
     const baseUrl = await startFixtureServer(async (_request, response) => {
       response.statusCode = 204;
@@ -198,6 +318,37 @@ describe("WebMcpGateway", () => {
       }
     });
     await expect(repo.listAuditRecords({ toolName: "admin.users.list" })).resolves.toEqual([]);
+  });
+
+  it("does not execute executor tools that exist only in persisted repository state", async () => {
+    const repo = createSeedRepository();
+    const plugin = executorPlugin();
+    await repo.upsertPlugin({ ...pluginRecordFromManifest(plugin), config: { baseUrl: "https://workflow.example.test" } });
+    for (const tool of pluginToolsFromManifest(plugin)) {
+      await repo.upsertPluginTool(tool);
+    }
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})), {
+      auditLogger: new AuditLogger({ repository: repo }),
+      executorHandlers: {
+        "workflow-plugin": {
+          uploadVideo: () => ({ ok: true })
+        }
+      }
+    });
+
+    const response = await gateway.handleJsonRpc({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "tools/call",
+      params: { name: "workflow.upload.video", arguments: { title: "Demo" } }
+    });
+
+    expect(response).toMatchObject({
+      error: {
+        data: { code: "MCP_GATEWAY_ERROR" }
+      }
+    });
+    await expect(repo.listAuditRecords({ toolName: "workflow.upload.video" })).resolves.toEqual([]);
   });
 
   it("returns CREDENTIAL_MISSING and records a failed audit when a credential binding is absent", async () => {
@@ -234,6 +385,9 @@ describe("WebMcpGateway", () => {
     });
     await expect(repo.listAuditRecords({ toolName: "admin.users.list" })).resolves.toEqual([
       expect.objectContaining({
+        status: "allowed"
+      }),
+      expect.objectContaining({
         status: "failed",
         errorCode: "CREDENTIAL_MISSING"
       })
@@ -251,4 +405,32 @@ async function startFixtureServer(handler: (request: IncomingMessage, response: 
     throw new Error("Fixture server did not bind to a TCP port.");
   }
   return `http://127.0.0.1:${address.port}`;
+}
+
+function executorPlugin(input: { effect?: "write" | "dangerous" } = {}) {
+  return definePlugin({
+    id: "workflow-plugin",
+    name: "Workflow Plugin",
+    version: "0.1.0",
+    type: "custom",
+    description: "Executor workflow plugin.",
+    tools: [
+      defineExecutorTool({
+        name: "workflow.upload.video",
+        description: "Upload video.",
+        inputSchema: {
+          type: "object",
+          required: ["title"],
+          properties: {
+            title: { type: "string" }
+          }
+        },
+        effect: input.effect ?? "write",
+        handler: "uploadVideo"
+      })
+    ],
+    handlers: {
+      uploadVideo: async () => ({ ok: true })
+    }
+  });
 }

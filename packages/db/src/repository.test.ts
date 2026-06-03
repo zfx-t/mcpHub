@@ -38,6 +38,18 @@ describe("MemoryRepository", () => {
       operation: { type: "http", method: "GET", path: "/api/users" },
       enabled: true
     });
+    await repo.upsertPluginTool({
+      id: "tool_admin_upload_video",
+      pluginId: "admin-users",
+      name: "admin.upload.video",
+      description: "Upload video.",
+      inputSchema: { type: "object" },
+      effect: "write",
+      requiresConfirmation: false,
+      credentialRefs: ["admin-token"],
+      executor: { type: "module", handler: "uploadVideo" },
+      enabled: true
+    });
     await repo.upsertCredential({
       id: "cred_admin_token",
       pluginId: "admin-users",
@@ -68,8 +80,11 @@ describe("MemoryRepository", () => {
     });
 
     await expect(repo.getPlugin("admin-users")).resolves.toMatchObject({ type: "api", enabled: true });
-    await expect(repo.listPluginTools("admin-users")).resolves.toHaveLength(1);
+    await expect(repo.listPluginTools("admin-users")).resolves.toHaveLength(2);
     await expect(repo.getPluginToolByName("admin.users.list")).resolves.toMatchObject({ id: "tool_admin_users_list" });
+    await expect(repo.getPluginToolByName("admin.upload.video")).resolves.toMatchObject({
+      executor: { type: "module", handler: "uploadVideo" }
+    });
     await expect(repo.getCredentialForRequirement("admin-users", "admin-token")).resolves.toMatchObject({ id: "cred_admin_token" });
     await expect(repo.listCredentials("admin-users")).resolves.toEqual([
       expect.objectContaining({ secretRef: "env:ADMIN_TOKEN" })
@@ -100,6 +115,7 @@ describe("MemoryRepository", () => {
         effect: "read",
         requiresConfirmation: false,
         credentialRefs: [],
+        operation: { type: "http", method: "GET", path: "/api/users" },
         enabled: true
       })
     ).rejects.toThrow(/Unknown plugin/);
@@ -122,6 +138,7 @@ describe("MemoryRepository", () => {
       effect: "read",
       requiresConfirmation: false,
       credentialRefs: [],
+      operation: { type: "http", method: "GET", path: "/api/users" },
       enabled: true
     });
     await expect(
@@ -134,6 +151,7 @@ describe("MemoryRepository", () => {
         effect: "read",
         requiresConfirmation: false,
         credentialRefs: [],
+        operation: { type: "http", method: "GET", path: "/api/users" },
         enabled: true
       })
     ).rejects.toThrow(/Duplicate plugin tool name/);

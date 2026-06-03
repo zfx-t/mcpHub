@@ -9,8 +9,10 @@ import type { CredentialType, FeedItem, PlatformErrorCode, Plugin, PluginTool } 
 import type { McpHubRepository } from "@mcphub/db";
 import type { ExtractionService } from "@mcphub/extractors";
 import type { PluginRegistry } from "@mcphub/plugins";
+import type { PluginHandlers } from "@mcphub/plugins";
 import { evaluateToolPolicy } from "@mcphub/policy";
 import type { PolicyConfig } from "@mcphub/policy";
+import { PluginExecutorRuntime, PluginExecutorRuntimeError } from "./executor-runtime.js";
 
 export interface McpContent {
   uri: string;
@@ -39,6 +41,7 @@ export interface PlatformGatewayOptions {
   policy?: PolicyConfig;
   pluginPolicies?: Record<string, PolicyConfig>;
   pluginMetadata?: Record<string, PlatformPluginMetadata>;
+  executorHandlers?: Record<string, PluginHandlers>;
 }
 
 type DecoratedPlugin = Plugin & Partial<PlatformPluginMetadata>;
@@ -46,6 +49,7 @@ type DecoratedPlugin = Plugin & Partial<PlatformPluginMetadata>;
 export class WebMcpGateway {
   private readonly apiConnector: ApiConnector;
   private readonly credentialStore: CredentialStore;
+  private readonly executorRuntime: PluginExecutorRuntime;
 
   constructor(
     private readonly repository: McpHubRepository,
@@ -54,6 +58,13 @@ export class WebMcpGateway {
   ) {
     this.apiConnector = platform.apiConnector ?? new ApiConnector();
     this.credentialStore = platform.credentialStore ?? new EnvironmentCredentialStore();
+    this.executorRuntime = new PluginExecutorRuntime({
+      repository,
+      handlers: platform.executorHandlers,
+      apiConnector: this.apiConnector,
+      credentialStore: this.credentialStore,
+      auditLogger: platform.auditLogger
+    });
   }
 
   listResources(): McpResourceDescriptor[] {
@@ -282,6 +293,7 @@ export class WebMcpGateway {
   }
 
   private async callPlatformTool(name: string, input: unknown): Promise<McpContent[]> {
+    const requestId = crypto.randomUUID();
     const tool = await this.getPlatformToolByName(name);
     if (!tool) {
       throw new Error(`Unknown tool ${name}`);
@@ -296,7 +308,7 @@ export class WebMcpGateway {
       policy: this.policyForPlugin(tool.pluginId)
     });
     if (!decision.allowed) {
-      await this.writeToolAudit(tool, decision.status, input, {
+      await this.writeToolAudit(requestId, tool, decision.status, input, {
         target: target.url,
         policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
         errorCode: decision.code,
@@ -305,9 +317,29 @@ export class WebMcpGateway {
       return jsonContent(`tool://${name}`, platformErrorResult(name, decision.code, decision.message));
     }
 
-    if (!plugin || !tool.operation || tool.operation.type !== "http") {
-      const message = `Tool ${name} does not have an executable HTTP operation.`;
-      await this.writeToolAudit(tool, "failed", input, {
+    if (!plugin) {
+      const message = `Plugin ${tool.pluginId} is not loaded.`;
+      await this.writeToolAudit(requestId, tool, "failed", input, {
+        target: target.url,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
+        errorCode: "PLUGIN_EXECUTION_ERROR",
+        errorMessage: message
+      });
+      return jsonContent(`tool://${name}`, platformErrorResult(name, "PLUGIN_EXECUTION_ERROR", message));
+    }
+
+    await this.writeToolAudit(requestId, tool, "allowed", input, {
+      target: target.url,
+      policyMode: this.policyForPlugin(tool.pluginId).dangerousMode
+    });
+
+    if (tool.executor) {
+      return this.callExecutorTool(requestId, plugin, tool, input, target.url);
+    }
+
+    if (!tool.operation || tool.operation.type !== "http") {
+      const message = `Tool ${name} does not have an executable operation.`;
+      await this.writeToolAudit(requestId, tool, "failed", input, {
         target: target.url,
         policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
         errorCode: "PLUGIN_EXECUTION_ERROR",
@@ -321,7 +353,7 @@ export class WebMcpGateway {
       request = await this.requestForTool(plugin, tool, input);
     } catch (error) {
       const executionError = platformExecutionError(error);
-      await this.writeToolAudit(tool, "failed", input, {
+      await this.writeToolAudit(requestId, tool, "failed", input, {
         target: target.url,
         policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
         errorCode: executionError.code,
@@ -330,14 +362,9 @@ export class WebMcpGateway {
       return jsonContent(`tool://${name}`, platformErrorResult(name, executionError.code, executionError.message));
     }
 
-    await this.writeToolAudit(tool, "allowed", input, {
-      target: target.url,
-      policyMode: this.policyForPlugin(tool.pluginId).dangerousMode
-    });
-
     try {
       const result = await this.apiConnector.executeJson(request);
-      await this.writeToolAudit(tool, result.ok ? "succeeded" : "failed", input, {
+      await this.writeToolAudit(requestId, tool, result.ok ? "succeeded" : "failed", input, {
         target: result.metadata.targetUrl,
         policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
         statusCode: result.metadata.statusCode,
@@ -348,13 +375,43 @@ export class WebMcpGateway {
       return jsonContent(`tool://${name}`, toolResultFromConnector(name, result));
     } catch (error) {
       const executionError = platformExecutionError(error);
-      await this.writeToolAudit(tool, "failed", input, {
+      await this.writeToolAudit(requestId, tool, "failed", input, {
         target: target.url,
         policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
         errorCode: executionError.code,
         errorMessage: executionError.message
       });
       return jsonContent(`tool://${name}`, platformErrorResult(name, executionError.code, executionError.message));
+    }
+  }
+
+  private async callExecutorTool(
+    requestId: string,
+    plugin: Plugin,
+    tool: PluginTool,
+    input: unknown,
+    target?: string
+  ): Promise<McpContent[]> {
+    try {
+      const data = await this.executorRuntime.execute({ requestId, plugin, tool, input });
+      await this.writeToolAudit(requestId, tool, "succeeded", input, {
+        target,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode
+      });
+      return jsonContent(`tool://${tool.name}`, {
+        ok: true,
+        operation: tool.name,
+        data
+      });
+    } catch (error) {
+      const executionError = platformExecutionError(error);
+      await this.writeToolAudit(requestId, tool, "failed", input, {
+        target,
+        policyMode: this.policyForPlugin(tool.pluginId).dangerousMode,
+        errorCode: executionError.code,
+        errorMessage: executionError.message
+      });
+      return jsonContent(`tool://${tool.name}`, platformErrorResult(tool.name, executionError.code, executionError.message));
     }
   }
 
@@ -391,8 +448,12 @@ export class WebMcpGateway {
   }
 
   private targetForTool(plugin: Plugin | undefined, tool: PluginTool, input: unknown) {
-    if (!plugin || !tool.operation || tool.operation.type !== "http") {
+    if (!plugin) {
       return {};
+    }
+    if (!tool.operation || tool.operation.type !== "http") {
+      const baseUrl = typeof plugin.config.baseUrl === "string" ? plugin.config.baseUrl : undefined;
+      return baseUrl ? { url: baseUrl } : {};
     }
     const baseUrl = typeof plugin.config.baseUrl === "string" ? plugin.config.baseUrl : "";
     const path = renderPathForTarget(tool.operation.path, isRecord(input) ? input : {});
@@ -434,6 +495,7 @@ export class WebMcpGateway {
   }
 
   private async writeToolAudit(
+    requestId: string,
     tool: PluginTool,
     status: "allowed" | "blocked" | "succeeded" | "failed" | "policy_denied",
     input: unknown,
@@ -443,7 +505,7 @@ export class WebMcpGateway {
       return;
     }
     await this.platform.auditLogger.recordToolCall({
-      requestId: crypto.randomUUID(),
+      requestId,
       pluginId: tool.pluginId,
       toolName: tool.name,
       effect: tool.effect,
@@ -566,10 +628,13 @@ class PluginExecutionError extends Error {
 }
 
 function platformExecutionError(error: unknown): {
-  code: Extract<PlatformErrorCode, "CREDENTIAL_MISSING" | "CREDENTIAL_INVALID" | "PLUGIN_EXECUTION_ERROR">;
+  code: Extract<
+    PlatformErrorCode,
+    "CREDENTIAL_MISSING" | "CREDENTIAL_INVALID" | "REMOTE_HTTP_ERROR" | "REMOTE_TIMEOUT" | "PLUGIN_EXECUTION_ERROR"
+  >;
   message: string;
 } {
-  if (error instanceof PluginExecutionError || error instanceof CredentialResolutionError) {
+  if (error instanceof PluginExecutionError || error instanceof CredentialResolutionError || error instanceof PluginExecutorRuntimeError) {
     return {
       code: error.code,
       message: error.message

@@ -91,8 +91,8 @@ export class PostgresRepository implements McpHubRepository {
   async upsertPluginTool(tool: PluginTool): Promise<void> {
     await this.pool.query(
       `INSERT INTO plugin_tools (
-        id, plugin_id, name, description, input_schema, effect, requires_confirmation, credential_refs, operation, enabled
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+        id, plugin_id, name, description, input_schema, effect, requires_confirmation, credential_refs, operation, executor, enabled
+      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
       ON CONFLICT (id) DO UPDATE SET
         plugin_id = EXCLUDED.plugin_id,
         name = EXCLUDED.name,
@@ -102,6 +102,7 @@ export class PostgresRepository implements McpHubRepository {
         requires_confirmation = EXCLUDED.requires_confirmation,
         credential_refs = EXCLUDED.credential_refs,
         operation = EXCLUDED.operation,
+        executor = EXCLUDED.executor,
         enabled = EXCLUDED.enabled`,
       [
         tool.id,
@@ -113,6 +114,7 @@ export class PostgresRepository implements McpHubRepository {
         tool.requiresConfirmation,
         jsonb(tool.credentialRefs),
         jsonb(tool.operation),
+        jsonb(tool.executor),
         tool.enabled
       ]
     );
@@ -555,6 +557,7 @@ function rowToPluginTool(row: any): PluginTool {
     requiresConfirmation: row.requires_confirmation,
     credentialRefs: row.credential_refs,
     operation: row.operation ?? undefined,
+    executor: row.executor ?? undefined,
     enabled: row.enabled
   };
 }
