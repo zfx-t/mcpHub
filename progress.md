@@ -278,5 +278,51 @@
   - `findings.md`
   - `progress.md`
 
+### 阶段 16：插件自定义执行器 P2 实现、验证与收尾
+- **状态：** complete
+- **开始时间：** 2026-06-03 CST
+- 执行的操作：
+  - 使用 `$executing-plans` 和子代理辅助审阅 gateway/audit/connector 接入点，确认执行权威必须继续来自当前 registry/handler map。
+  - 扩展 `packages/core/src/types.ts` 和 `packages/core/src/schemas.ts`：新增 `PluginTool.executor` / `ModulePluginToolExecutor`，并要求工具只能二选一声明 `operation` 或 `executor`。
+  - 扩展 `packages/plugins/src/sdk.ts`：新增 `defineExecutorTool()`、`PluginExecutorContext`、`PluginHandler`、`PluginHandlers`，并让 `definePlugin()` 保留 runtime-only `handlers`。
+  - 扩展 `packages/plugins/src/local-loader.ts`：本地插件加载时保留 handlers map，诊断 executor tool 引用缺失 handler 或非函数 handler；disabled 插件仍在 import 前跳过。
+  - 扩展 `packages/plugins/src/registry.ts`、`packages/db/src/schema.sql`、`packages/db/src/postgres.ts`：保留 executor 元数据，但不持久化 handler 函数。
+  - 新增 `packages/mcp/src/executor-runtime.ts`：实现 handler 调用、context.config、credential resolve、JSON HTTP helper、checkpoint audit、错误归一化。
+  - 扩展 `packages/mcp/src/gateway.ts`：policy 先于 handler 执行；HTTP operation 继续走 connector；executor tool 走 runtime；stale repository executor tool 不可执行。
+  - 扩展 `apps/server/src/platform.ts`：将 `loadLocalPlugins()` 返回的 `handlers` 传给 MCP gateway。
+  - 增补测试：core schema、plugin SDK/registry/local-loader、executor runtime、gateway executor policy/audit/stale、DB executor 元数据、audit/policy fixture。
+  - 扩展 `scripts/smoke.ts`：新增 fake multi-step upload executor 插件，覆盖 dryRun、session/part/submit/status 顺序、checkpoint audit；新增 blocked executor 插件验证 dangerous block 不调用 handler。
+  - 更新 README：补充 HTTP vs executor、executor 插件示例、context API、checkpoint/dryRun、trusted local code 边界。
+- 当前验证：
+  - `pnpm vitest run packages/core/src/core.test.ts packages/plugins/src/registry.test.ts packages/plugins/src/local-loader.test.ts`：3 个测试文件、38 个测试通过。
+  - `pnpm vitest run packages/mcp/src/executor-runtime.test.ts packages/mcp/src/gateway.test.ts packages/db/src/repository.test.ts packages/audit/src/logger.test.ts packages/policy/src/engine.test.ts`：5 个测试文件、29 个测试通过。
+  - `pnpm test`：13 个测试文件、85 个测试通过。
+  - `pnpm typecheck`：通过。
+  - `pnpm test:e2e`：加载 `blocked-upload`、`fake-upload`、`local-admin`，输出 `Smoke test passed`。
+  - `pnpm build`：通过。
+  - `pnpm lint`：通过。
+  - `docker compose config`：通过。
+  - `git diff --check`：通过。
+- 遇到并解决的问题：
+  - project reference 使用旧 `dist/*.d.ts` 导致 plugins/mcp/server 看不到新类型；通过重建 `@mcphub/core`、`@mcphub/plugins`、`@mcphub/mcp` 声明解决。
+  - schema 收紧后旧测试夹具缺少执行模式；已为 DB/audit/policy/core/plugin fixture 补 `operation` 或 `executor`。
+  - credential missing 场景现在按设计保留 `allowed + failed` 两条审计；已更新测试预期。
+  - lint 发现 executor runtime 测试未使用导入；已删除。
+- 创建/修改的主要文件：
+  - `packages/core/src/types.ts`
+  - `packages/core/src/schemas.ts`
+  - `packages/plugins/src/sdk.ts`
+  - `packages/plugins/src/local-loader.ts`
+  - `packages/plugins/src/registry.ts`
+  - `packages/mcp/src/executor-runtime.ts`
+  - `packages/mcp/src/gateway.ts`
+  - `apps/server/src/platform.ts`
+  - `packages/db/src/schema.sql`
+  - `packages/db/src/postgres.ts`
+  - `scripts/smoke.ts`
+  - `README.md`
+  - 相关测试文件
+- 完成时间：2026-06-03 CST
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*

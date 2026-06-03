@@ -27,6 +27,8 @@ const articleHtml = `
 const repo = createSeedRepository();
 let disableCalls = 0;
 let localDisableCalls = 0;
+const uploadCalls: string[] = [];
+let blockedUploadCalls = 0;
 const adminServer = await startFixtureServer(async (request, response) => {
   if (request.url?.startsWith("/api/users") && request.method === "GET") {
     response.setHeader("Content-Type", "application/json");
@@ -50,6 +52,42 @@ const adminServer = await startFixtureServer(async (request, response) => {
     response.end();
     return;
   }
+  if (request.url === "/upload/session" && request.method === "POST") {
+    uploadCalls.push("session");
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ uploadId: "upload-1" }));
+    return;
+  }
+  if (request.url === "/upload/upload-1/parts/1" && request.method === "POST") {
+    uploadCalls.push("part-1");
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ ok: true, part: 1 }));
+    return;
+  }
+  if (request.url === "/upload/upload-1/parts/2" && request.method === "POST") {
+    uploadCalls.push("part-2");
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ ok: true, part: 2 }));
+    return;
+  }
+  if (request.url === "/upload/upload-1/submit" && request.method === "POST") {
+    uploadCalls.push("submit");
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ ok: true, status: "submitted" }));
+    return;
+  }
+  if (request.url === "/upload/upload-1/status" && request.method === "GET") {
+    uploadCalls.push("status");
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ ok: true, uploadId: "upload-1", status: "ready" }));
+    return;
+  }
+  if (request.url === "/blocked-upload" && request.method === "POST") {
+    blockedUploadCalls += 1;
+    response.setHeader("Content-Type", "application/json");
+    response.end(JSON.stringify({ ok: true }));
+    return;
+  }
   response.statusCode = 404;
   response.end("not found");
 });
@@ -62,7 +100,8 @@ const smokeEnv = {
   SAMPLE_ADMIN_API_TOKEN_ENV: "SAMPLE_ADMIN_API_TOKEN",
   SAMPLE_ADMIN_API_TOKEN: "secret-token",
   MCPHUB_PLUGIN_DIR: pluginDir,
-  LOCAL_ADMIN_API_TOKEN: "local-secret-token"
+  LOCAL_ADMIN_API_TOKEN: "local-secret-token",
+  FAKE_UPLOAD_TOKEN: "fake-upload-secret"
 };
 const config = loadConfig(smokeEnv);
 const extraction = new ExtractionService(
@@ -129,6 +168,8 @@ try {
   assertStatus(toolList.status, 200, "tools/list status");
   assertIncludes(toolList.body, "admin.users.list", "tools/list includes admin.users.list");
   assertIncludes(toolList.body, "local.admin.users.list", "tools/list includes local.admin.users.list");
+  assertIncludes(toolList.body, "fake.upload.video", "tools/list includes fake.upload.video");
+  assertIncludes(toolList.body, "blocked.upload.video", "tools/list includes blocked.upload.video");
 
   const refresh = await postJson(`${baseUrl}/mcp`, {
     jsonrpc: "2.0",
@@ -202,6 +243,37 @@ try {
   assertIncludes(mcpText(localDisable.body), "\"ok\": true", "local.admin.users.disable auditOnly success");
   assertEqual(localDisableCalls, 1, "local dangerous remote call count");
 
+  const dryRunUpload = await postJson(`${baseUrl}/mcp`, {
+    jsonrpc: "2.0",
+    id: 18,
+    method: "tools/call",
+    params: { name: "fake.upload.video", arguments: { title: "Demo Upload", dryRun: true } }
+  });
+  assertStatus(dryRunUpload.status, 200, "fake.upload.video dryRun status");
+  assertIncludes(mcpText(dryRunUpload.body), "\"dryRun\": true", "fake.upload.video dryRun result");
+  assertEqual(uploadCalls.length, 0, "fake.upload.video dryRun remote call count");
+
+  const upload = await postJson(`${baseUrl}/mcp`, {
+    jsonrpc: "2.0",
+    id: 19,
+    method: "tools/call",
+    params: { name: "fake.upload.video", arguments: { title: "Demo Upload" } }
+  });
+  assertStatus(upload.status, 200, "fake.upload.video status");
+  assertIncludes(mcpText(upload.body), "\"uploadId\": \"upload-1\"", "fake.upload.video upload id");
+  assertIncludes(mcpText(upload.body), "\"status\": \"ready\"", "fake.upload.video status result");
+  assertEqual(uploadCalls.join(","), "session,part-1,part-2,submit,status", "fake.upload.video remote call sequence");
+
+  const blockedUpload = await postJson(`${baseUrl}/mcp`, {
+    jsonrpc: "2.0",
+    id: 20,
+    method: "tools/call",
+    params: { name: "blocked.upload.video", arguments: { title: "Blocked Upload" } }
+  });
+  assertStatus(blockedUpload.status, 200, "blocked.upload.video status");
+  assertIncludes(mcpText(blockedUpload.body), "CONFIRMATION_REQUIRED", "blocked.upload.video confirmation block");
+  assertEqual(blockedUploadCalls, 0, "blocked.upload.video handler call count");
+
   const audit = await postJson(`${baseUrl}/mcp`, {
     jsonrpc: "2.0",
     id: 15,
@@ -213,6 +285,10 @@ try {
   assertIncludes(auditText, "CONFIRMATION_REQUIRED", "audit recent contains blocked call");
   assertIncludes(auditText, "user-1", "audit recent contains blocked call input");
   assertIncludes(auditText, "local.admin.users.disable", "audit recent contains local dangerous call");
+  assertIncludes(auditText, "fake.upload.video", "audit recent contains executor upload call");
+  assertIncludes(auditText, "_checkpointStep", "audit recent contains executor checkpoints");
+  assertIncludes(auditText, "upload-session-created", "audit recent contains upload session checkpoint");
+  assertIncludes(auditText, "blocked.upload.video", "audit recent contains blocked executor call");
   assertIncludes(auditText, "_policyMode", "audit recent contains policy evidence");
   assertIncludes(auditText, "auditOnly", "audit recent contains auditOnly evidence");
 
@@ -318,11 +394,11 @@ async function startFixtureServer(handler: (request: IncomingMessage, response: 
 
 async function createLocalPluginFixture(baseUrl: string): Promise<string> {
   const pluginDir = await mkdtemp(path.join(os.tmpdir(), "mcphub-smoke-plugins-"));
-  const pluginPath = path.join(pluginDir, "local-admin");
-  await mkdir(pluginPath, { recursive: true });
-  await writeFile(path.join(pluginPath, "index.js"), localPluginModuleSource());
+  const localAdminPath = path.join(pluginDir, "local-admin");
+  await mkdir(localAdminPath, { recursive: true });
+  await writeFile(path.join(localAdminPath, "index.js"), localPluginModuleSource());
   await writeFile(
-    path.join(pluginPath, "plugin.config.json"),
+    path.join(localAdminPath, "plugin.config.json"),
     JSON.stringify(
       {
         enabled: true,
@@ -335,6 +411,49 @@ async function createLocalPluginFixture(baseUrl: string): Promise<string> {
         },
         policy: {
           dangerousMode: "auditOnly"
+        }
+      },
+      null,
+      2
+    )
+  );
+
+  const fakeUploadPath = path.join(pluginDir, "fake-upload");
+  await mkdir(fakeUploadPath, { recursive: true });
+  await writeFile(path.join(fakeUploadPath, "index.js"), fakeUploadPluginModuleSource());
+  await writeFile(
+    path.join(fakeUploadPath, "plugin.config.json"),
+    JSON.stringify(
+      {
+        enabled: true,
+        config: { baseUrl },
+        credentials: {
+          "upload-token": {
+            type: "bearer",
+            secretRef: "env:FAKE_UPLOAD_TOKEN"
+          }
+        },
+        policy: {
+          dangerousMode: "auditOnly"
+        }
+      },
+      null,
+      2
+    )
+  );
+
+  const blockedUploadPath = path.join(pluginDir, "blocked-upload");
+  await mkdir(blockedUploadPath, { recursive: true });
+  await writeFile(path.join(blockedUploadPath, "index.js"), blockedUploadPluginModuleSource());
+  await writeFile(
+    path.join(blockedUploadPath, "plugin.config.json"),
+    JSON.stringify(
+      {
+        enabled: true,
+        config: { baseUrl },
+        credentials: {},
+        policy: {
+          dangerousMode: "block"
         }
       },
       null,
@@ -370,6 +489,91 @@ function localPluginModuleSource(): string {
       operation: { type: "http", method: "POST", path: "/api/local-users/{id}/disable" }
     }
   ]
+};
+`;
+}
+
+function fakeUploadPluginModuleSource(): string {
+  return `export default {
+  id: "fake-upload",
+  name: "Fake Upload",
+  version: "0.1.0",
+  type: "custom",
+  description: "Fake multi-step executor upload smoke plugin.",
+  credentials: [{ id: "upload-token", type: "bearer" }],
+  tools: [
+    {
+      name: "fake.upload.video",
+      description: "Run a fake multi-step upload workflow.",
+      inputSchema: {
+        type: "object",
+        required: ["title"],
+        properties: {
+          title: { type: "string" },
+          dryRun: { type: "boolean" }
+        }
+      },
+      effect: "dangerous",
+      credentialRefs: ["upload-token"],
+      executor: { type: "module", handler: "uploadVideo" }
+    }
+  ],
+  handlers: {
+    async uploadVideo(input, context) {
+      await context.checkpoint("validated", { title: input.title, dryRun: Boolean(input.dryRun) });
+      if (input.dryRun) {
+        return {
+          ok: true,
+          dryRun: true,
+          plan: ["create-session", "upload-part-1", "upload-part-2", "submit", "poll-status"]
+        };
+      }
+
+      const session = await context.http.post("/upload/session", { title: input.title });
+      await context.checkpoint("upload-session-created", { uploadId: session.uploadId });
+      await context.http.post("/upload/" + session.uploadId + "/parts/1", { text: "part-one" });
+      await context.checkpoint("upload-part", { uploadId: session.uploadId, part: 1 });
+      await context.http.post("/upload/" + session.uploadId + "/parts/2", { text: "part-two" });
+      await context.checkpoint("upload-part", { uploadId: session.uploadId, part: 2 });
+      await context.http.post("/upload/" + session.uploadId + "/submit", {});
+      await context.checkpoint("submitted", { uploadId: session.uploadId });
+      const status = await context.http.get("/upload/" + session.uploadId + "/status");
+      await context.checkpoint("status-polled", { uploadId: status.uploadId, status: status.status });
+      return { ok: true, uploadId: status.uploadId, status: status.status };
+    }
+  }
+};
+`;
+}
+
+function blockedUploadPluginModuleSource(): string {
+  return `export default {
+  id: "blocked-upload",
+  name: "Blocked Upload",
+  version: "0.1.0",
+  type: "custom",
+  description: "Executor plugin used to prove dangerous block prevents handler invocation.",
+  tools: [
+    {
+      name: "blocked.upload.video",
+      description: "Blocked fake upload workflow.",
+      inputSchema: {
+        type: "object",
+        required: ["title"],
+        properties: {
+          title: { type: "string" }
+        }
+      },
+      effect: "dangerous",
+      executor: { type: "module", handler: "uploadVideo" }
+    }
+  ],
+  handlers: {
+    async uploadVideo(_input, context) {
+      await context.http.post("/blocked-upload", {});
+      return { ok: true };
+    }
+  }
 };
 `;
 }

@@ -207,6 +207,73 @@ export default {
 
 Local plugins are trusted server-side code. MCPHub validates manifest/config shape and skips broken plugins with diagnostics, but it does not sandbox hostile JavaScript. For plugins mounted outside this repo, prefer bundling runtime dependencies into the plugin output or exporting a plain manifest object so module resolution does not depend on the MCPHub workspace.
 
+## Executor Plugins
+
+HTTP tools are best for one REST request per MCP tool. Executor tools are for workflows where one MCP call needs plugin-owned code, such as validation, multiple API calls, upload steps, polling, and result normalization.
+
+Declare exactly one execution mode per tool:
+
+- `operation`: declarative HTTP execution through MCPHub's API connector.
+- `executor`: module handler execution through trusted local plugin code.
+
+Example executor plugin:
+
+```js
+export default {
+  id: "video-workflows",
+  name: "Video Workflows",
+  version: "0.1.0",
+  type: "custom",
+  description: "Expose multi-step video workflows as MCP tools.",
+  credentials: [{ id: "session-cookie", type: "cookie" }],
+  tools: [
+    {
+      name: "video.upload.create",
+      description: "Upload a video through a multi-step workflow.",
+      inputSchema: {
+        type: "object",
+        required: ["title"],
+        properties: {
+          title: { type: "string" },
+          dryRun: { type: "boolean" }
+        }
+      },
+      effect: "dangerous",
+      credentialRefs: ["session-cookie"],
+      executor: { type: "module", handler: "uploadVideo" }
+    }
+  ],
+  handlers: {
+    async uploadVideo(input, context) {
+      await context.checkpoint("validated", { title: input.title, dryRun: Boolean(input.dryRun) });
+      if (input.dryRun) {
+        return { ok: true, dryRun: true, plan: ["create-session", "upload-parts", "submit", "poll-status"] };
+      }
+
+      const session = await context.http.post("/upload/session", { title: input.title });
+      await context.checkpoint("upload-session-created", { uploadId: session.uploadId });
+      await context.http.post(`/upload/${session.uploadId}/parts/1`, { text: "part-one" });
+      await context.http.post(`/upload/${session.uploadId}/parts/2`, { text: "part-two" });
+      await context.http.post(`/upload/${session.uploadId}/submit`, {});
+      const status = await context.http.get(`/upload/${session.uploadId}/status`);
+      return { ok: true, uploadId: status.uploadId, status: status.status };
+    }
+  }
+};
+```
+
+The handler receives:
+
+- `context.config`: non-secret config from `plugin.config.json`.
+- `context.credentials.resolve(id)`: resolves a declared credential binding from the server environment.
+- `context.http.get/post/put/patch/delete`: JSON HTTP helper using `config.baseUrl`, timeout, credential injection, and connector error normalization.
+- `context.checkpoint(step, summary)`: writes redacted step evidence to `mcphub://audit/recent`.
+- `context.logger`: server-side plugin logging hook.
+
+Use `dryRun` in your own input schema when an agent should preview a workflow without mutations. MCPHub does not enforce dry-run semantics inside plugin code; the plugin handler owns that branch.
+
+Executor handlers run as trusted server-side JavaScript. MCPHub validates that referenced handlers exist and blocks disabled/broken plugins, but it is not a sandbox for untrusted code.
+
 Verify a local plugin with MCP:
 
 ```bash

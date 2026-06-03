@@ -97,6 +97,13 @@
 | 插件 executor 需要与 MCPHub 核心解耦 | MCPHub 应提供 `execute(input, context)` 运行契约和受控 context，插件负责业务流程、结果清洗和多接口编排，平台负责加载、策略、凭据、审计和错误边界 |
 | 插件 executor 设计采用双模式 | 保留 P1 `operation.type = "http"` 声明式工具，同时新增 `executor.type = "module"` 和 handler workflow，确保简单 REST 与复杂 workflow 都能表达 |
 | 插件 executor 实施计划聚焦假上传 fixture | P2 不引入真实 B 站上传实现，用 fake multi-step upload plugin 验证校验、分片、提交、轮询、audit checkpoint 和 dangerous policy |
+| 插件 executor P2 已实现 | `packages/mcp/src/executor-runtime.ts` 新增 handler runtime；`packages/mcp/src/gateway.ts` 在 policy 通过后按 HTTP/executor 分流 |
+| executor handler 只来自当前进程加载结果 | `loadLocalPlugins()` 返回 `handlers` map，`createPlatformServices()` 传入 `executorHandlers`；repository 只保存 executor 元数据，不保存函数，也不作为执行权威 |
+| checkpoint audit 采用最小 schema 方案 | 不新增表和枚举；`context.checkpoint()` 写现有 audit record，`inputSummary._checkpointStep` 保存步骤名，并复用 repository redaction |
+| fake upload smoke 覆盖 executor 工作流 | `scripts/smoke.ts` 临时加载 `fake-upload` 插件，验证 dryRun 无远端调用、正常路径按 session/part/submit/status 顺序调用、audit 可见 checkpoint |
+| dangerous block 会阻止 executor handler | `blocked-upload` smoke 和 gateway 测试证明 `dangerousMode:block` 返回 `CONFIRMATION_REQUIRED`，handler/远端均不执行 |
+| executor context HTTP 首版限制为 JSON helper | P2 提供 `get/post/put/patch/delete`；`uploadFileParts()` 保留为未实现错误，完整大文件/可恢复上传后置 |
+| P2 最终验证通过 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e`、`docker compose config`、`git diff --check` 均通过 |
 
 ## 平台化演进草案
 

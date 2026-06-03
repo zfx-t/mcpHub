@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 15：插件自定义执行器 P2 设计与实施计划审阅
+阶段 16：插件自定义执行器 P2 实现、验证与收尾已完成
 
 ## 各阶段
 
@@ -133,9 +133,22 @@
 - [x] 以 B 站上传视频插件作为目标用例，验证 executor 能覆盖多个 API 调用和复杂流程
 - [x] 写入新的设计文档 `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md`
 - [x] 写入实施计划 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md`
-- [ ] 用户审阅插件自定义执行器 P2 设计文档和实施计划
-- [ ] 用户确认后进入代码实现
-- **状态：** in_progress
+- [x] 用户审阅插件自定义执行器 P2 设计文档和实施计划
+- [x] 用户确认后进入代码实现
+- **状态：** complete
+
+### 阶段 16：插件自定义执行器 P2 实现、验证与收尾
+- [x] 扩展 core tool schema：工具必须二选一声明 `operation` 或 `executor`
+- [x] 扩展插件 SDK：新增 `defineExecutorTool()`、handler/context 类型和 `handlers` manifest 支持
+- [x] 扩展本地插件 loader：保留 runtime handler map，诊断缺失或非函数 handler
+- [x] 扩展 registry/repository/Postgres：保留 executor 元数据，不持久化函数
+- [x] 新增 executor runtime：handler 调用、context.config、credentials、HTTP helper、checkpoint audit、错误归一化
+- [x] 扩展 MCP gateway：policy 先于 handler 执行，HTTP/executor 分流，stale repository tool 不可执行
+- [x] 扩展 smoke：fake multi-step upload executor、dryRun、checkpoint audit、dangerous block
+- [x] 更新 README：HTTP vs executor、示例、context API、dryRun、信任边界
+- [x] 运行最终验证：`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e`、`docker compose config`、`git diff --check`
+- [x] 按功能拆分提交
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
@@ -173,6 +186,7 @@
 | 本地插件加载 P1 实施计划已写入 | `docs/superpowers/plans/2026-06-03-local-plugin-loading-implementation-plan.md` |
 | 插件自定义执行器进入后续 P2 | 用户确认第二版重点是插件自定义 executor，可支撑 B 站上传视频这类多 API、多步骤 workflow tool |
 | 插件自定义执行器设计和实施计划已写入 | `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md` 和 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md` |
+| 插件自定义执行器 P2 已实现并验证通过 | 支持 `executor: { type: "module", handler }`、本地 handler 加载、gateway 执行、checkpoint audit、fake upload smoke |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
