@@ -1,0 +1,15 @@
+{
+  "enabled": true,
+  "config": {
+    "baseUrl": "http://127.0.0.1:4102"
+  },
+  "credentials": {
+    "upload-token": {
+      "type": "bearer",
+      "secretRef": "env:FAKE_UPLOAD_TOKEN"
+    }
+  },
+  "policy": {
+    "dangerousMode": "auditOnly"
+  }
+}

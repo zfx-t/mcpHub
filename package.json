@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "test": "vitest run",
     "test:e2e": "tsx scripts/smoke.ts",
+    "test:plugin": "node --import tsx scripts/verify-example-plugin.ts",
     "fixture:admin": "tsx scripts/admin-fixture.ts",
     "typecheck": "pnpm --filter @mcphub/core build && pnpm --filter @mcphub/db build && pnpm --filter @mcphub/extractors build && pnpm --filter @mcphub/plugins build && pnpm --filter @mcphub/credentials build && pnpm --filter @mcphub/policy build && pnpm --filter @mcphub/api-connector build && pnpm --filter @mcphub/audit build && pnpm --filter @mcphub/mcp build && pnpm -r typecheck"
   },
