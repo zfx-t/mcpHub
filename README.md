@@ -274,6 +274,26 @@ Use `dryRun` in your own input schema when an agent should preview a workflow wi
 
 Executor handlers run as trusted server-side JavaScript. MCPHub validates that referenced handlers exist and blocks disabled/broken plugins, but it is not a sandbox for untrusted code.
 
+## Example Plugin Demo
+
+A runnable executor plugin demo is available at:
+
+```text
+examples/plugins/fake-upload/
+  index.js
+  plugin.config.json
+```
+
+The demo exposes `fake.upload.video`. It validates input, supports `dryRun`, records checkpoint audit evidence, and performs a fake multi-step upload sequence against a local fixture API.
+
+Run the full demo verification:
+
+```bash
+pnpm test:plugin
+```
+
+The script starts a fixture API, starts MCPHub on a random local port, loads the example plugin through `MCPHUB_PLUGIN_DIR`, calls MCP `tools/list`, calls `fake.upload.video`, checks the remote call order, and verifies `mcphub://audit/recent` contains checkpoint records.
+
 Verify a local plugin with MCP:
 
 ```bash

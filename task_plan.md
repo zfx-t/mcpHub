@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 16：插件自定义执行器 P2 实现、验证与收尾已完成
+阶段 17：插件验证 Demo 固化
 
 ## 各阶段
 
@@ -150,6 +150,13 @@
 - [x] 按功能拆分提交
 - **状态：** complete
 
+### 阶段 17：插件验证 Demo 固化
+- [x] 固化常驻示例插件目录 `examples/plugins/fake-upload`
+- [x] 新增 `pnpm test:plugin` 验证脚本
+- [x] 验证脚本覆盖 MCP `tools/list`、executor tool 调用、dryRun、多步骤远端调用顺序、checkpoint audit
+- [x] 更新 README，说明用户如何查看 demo 和运行验证
+- **状态：** complete
+
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
 2. MCP 输出应以 resources 为主、tools 为主，还是二者结合？已回答：Resources + Tools 组合。
@@ -187,6 +194,7 @@
 | 插件自定义执行器进入后续 P2 | 用户确认第二版重点是插件自定义 executor，可支撑 B 站上传视频这类多 API、多步骤 workflow tool |
 | 插件自定义执行器设计和实施计划已写入 | `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md` 和 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md` |
 | 插件自定义执行器 P2 已实现并验证通过 | 支持 `executor: { type: "module", handler }`、本地 handler 加载、gateway 执行、checkpoint audit、fake upload smoke |
+| 插件验证 Demo 已固化 | `examples/plugins/fake-upload` 可直接查看代码，`pnpm test:plugin` 可验证 MCPHub 正确加载并执行插件 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |

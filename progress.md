@@ -324,5 +324,27 @@
   - 相关测试文件
 - 完成时间：2026-06-03 CST
 
+### 阶段 17：插件验证 Demo 固化
+- **状态：** complete
+- **开始时间：** 2026-06-05 CST
+- 执行的操作：
+  - 用户确认下一步先固化插件验证 demo，让用户能直接查看插件代码并照着运行。
+  - 新增常驻示例插件 `examples/plugins/fake-upload/index.js` 和 `plugin.config.json`。
+  - 新增 `scripts/verify-example-plugin.ts`，脚本会启动 fixture API、启动 MCPHub、加载示例插件，并通过 MCP HTTP 调用验证 `tools/list`、dryRun、真实多步骤 workflow、audit checkpoint。
+  - 更新 `README.md`，补充 `examples/plugins/fake-upload` 目录和 `pnpm test:plugin` 使用方式。
+- 当前验证：
+  - `pnpm test:plugin`：普通沙箱下被 `listen EPERM 127.0.0.1` 拦截；提升本地监听权限后通过，输出 `Example executor plugin verification passed`。
+  - `pnpm lint`：通过。
+  - `pnpm typecheck`：通过。
+- 创建/修改的文件：
+  - `examples/plugins/fake-upload/index.js`
+  - `examples/plugins/fake-upload/plugin.config.json`
+  - `scripts/verify-example-plugin.ts`
+  - `package.json`
+  - `README.md`
+  - `task_plan.md`
+  - `findings.md`
+  - `progress.md`
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*
