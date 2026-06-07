@@ -358,9 +358,12 @@
   - 用户确认采用方案 C：`plugin:create` + `plugin:verify` + 开发文档。
   - 写入设计文档 `docs/superpowers/specs/2026-06-07-plugin-developer-experience-design.md`。
   - 完成设计文档自检：无 TBD/TODO；范围明确排除交互式 CLI、插件市场、真实第三方 API 生成、OpenAPI import 和浏览器自动化；修正一处中英文粘连表述。
+  - 用户确认设计文档没有问题，要求继续完成实施计划。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-07-plugin-developer-experience-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-9：基线、CLI 入口、参数校验、HTTP 模板、executor 模板、plugin verify、测试、文档、最终验证、提交交付。
 - 下一步：
-  - 用户审阅设计文档。
-  - 用户确认后进入实施计划。
+  - 用户审阅实施计划。
+  - 用户确认后进入阶段 19 代码实现。
 
 ---
 *每个阶段完成后或遇到错误时更新此文件*

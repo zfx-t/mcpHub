@@ -164,8 +164,23 @@
 - [x] 提出 2-3 种实现路线并给出推荐
 - [x] 用户确认设计后写入设计文档
 - [x] 设计文档自检并提交
-- [ ] 用户审阅设计文档后进入实施计划
+- [x] 用户审阅设计文档后进入实施计划
+- [x] 写入插件开发者体验实施计划
+- [ ] 用户审阅实施计划后进入代码实现
 - **状态：** in_progress
+
+### 阶段 19：插件开发者体验实现、验证与收尾
+- [ ] Phase 0：基线检查和仓库状态确认
+- [ ] Phase 1：新增 package scripts 和 CLI 入口
+- [ ] Phase 2：实现参数解析与共享校验规则
+- [ ] Phase 3：实现 `plugin:create` HTTP API 模板
+- [ ] Phase 4：实现 `plugin:create` executor 模板
+- [ ] Phase 5：实现 `plugin:verify`
+- [ ] Phase 6：补充自动化测试
+- [ ] Phase 7：新增插件开发文档并更新 README
+- [ ] Phase 8：运行最终验证
+- [ ] Phase 9：按功能提交并汇报
+- **状态：** pending
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
@@ -208,6 +223,7 @@
 | 插件开发者体验作为下一阶段 | 用户选择先做脚手架、调试命令和开发文档，降低用户从零编写 MCPHub 插件的门槛 |
 | 插件脚手架首版采用参数式 CLI | 用户选择只实现参数式 CLI，不做交互向导；业务细节由用户自行修改生成后的插件代码 |
 | 插件开发者体验设计文档已写入 | `docs/superpowers/specs/2026-06-07-plugin-developer-experience-design.md` 定义 `plugin:create`、`plugin:verify` 和插件开发文档范围 |
+| 插件开发者体验实施计划已写入 | `docs/superpowers/plans/2026-06-07-plugin-developer-experience-implementation-plan.md` 拆分 CLI、模板、验证器、测试、文档和最终验证阶段 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |

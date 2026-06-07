@@ -106,6 +106,7 @@
 | P2 最终验证通过 | `pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm build`、`pnpm test:e2e`、`docker compose config`、`git diff --check` 均通过 |
 | 插件验证 demo 已固化 | `examples/plugins/fake-upload` 提供可读示例，`scripts/verify-example-plugin.ts` 通过真实 MCP HTTP 调用验证插件加载、执行和 checkpoint audit |
 | 插件开发者体验是下一阶段瓶颈 | runtime 已能加载/执行插件，但用户仍需要手动组织目录、配置、handler、验证脚本和文档；下一阶段应把“从零创建插件到本地验证通过”固化为标准路径 |
+| 插件开发者体验实施路线确定 | 采用参数式 `plugin:create` 生成 `http-api`/`executor` 模板，使用 `plugin:verify` 复用本地 loader 做静态加载验证，文档集中到 `docs/plugins/development.md` |
 
 ## 平台化演进草案
 
