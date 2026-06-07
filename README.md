@@ -91,6 +91,8 @@ Existing Web resources remain stable:
 
 ## API Plugins
 
+For the create-edit-verify local plugin workflow, see [Plugin Development Guide](docs/plugins/development.md). It covers `pnpm plugin:create`, `pnpm plugin:verify`, HTTP API templates, executor workflow templates, credential bindings, and `MCPHUB_PLUGIN_DIR`.
+
 API plugins are trusted local code. A plugin maps an existing REST operation to an MCP tool:
 
 ```ts

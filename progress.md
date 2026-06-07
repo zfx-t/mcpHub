@@ -365,5 +365,65 @@
   - 用户审阅实施计划。
   - 用户确认后进入阶段 19 代码实现。
 
+### 阶段 19：插件开发者体验实现、验证与收尾
+- **状态：** in_progress
+- **开始时间：** 2026-06-07 CST
+- 执行的操作：
+  - 用户要求使用 `$executing-plans` 和 `$subagent-driven-development` 持续执行到计划完成。
+  - 读取并审查 `docs/superpowers/plans/2026-06-07-plugin-developer-experience-implementation-plan.md`，未发现阻塞问题。
+  - Phase 0 基线：`pnpm typecheck` 通过；`pnpm test` 13 个测试文件、85 个测试通过；`pnpm test:plugin` 普通沙箱下被本地监听权限拦截，提升权限后通过并输出 `Example executor plugin verification passed`。
+  - 实现 `plugin:create` / `plugin:verify` 参数式 CLI，并将 package scripts 改为 `node --import tsx ...`，避免 `tsx` CLI 在当前沙箱内创建 IPC pipe 被 `listen EPERM` 拦截。
+  - 新增共享 CLI helper、HTTP API 模板、executor 模板和 verifier，`plugin:verify` 复用现有 local plugin loader。
+  - 新增 `scripts/plugin-cli.test.ts`，覆盖 HTTP/executor 生成验证、重复目录、非法参数、缺失目录、缺失 executor handler 和 disabled plugin。
+  - 新增 `docs/plugins/development.md`，并在 README API Plugins 章节加入开发指南入口。
+- 当前验证：
+  - `pnpm vitest run scripts/plugin-cli.test.ts`：1 个测试文件、8 个测试通过。
+  - `pnpm plugin:create dev-http --template http-api --out /tmp/mcphub-plugin-devx --tool-name dev.http.read --force`：通过。
+  - `pnpm plugin:create dev-executor --template executor --out /tmp/mcphub-plugin-devx --tool-name dev.executor.run --force`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx/dev-http`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx/dev-executor`：通过。
+  - `pnpm lint`：通过。
+  - `pnpm typecheck`：通过。
+  - `pnpm test`：14 个测试文件、93 个测试通过。
+  - `pnpm plugin:create dev-http --template http-api --out /tmp/mcphub-plugin-devx-final --tool-name dev.http.read --force`：通过。
+  - `pnpm plugin:create dev-executor --template executor --out /tmp/mcphub-plugin-devx-final --tool-name dev.executor.run --force`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx-final/dev-http`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx-final/dev-executor`：通过。
+  - `pnpm test:plugin`：提升本地监听权限后通过，输出 `Example executor plugin verification passed`。
+  - `git diff --check`：通过。
+- 评审与修复：
+  - spec reviewer 初审发现实施计划要求 plugin slug 支持 `_`，但 CLI/core schema 不一致；已扩展 `pluginIdSchema` 支持 `_`，同步 CLI 校验、文档和测试。
+  - code quality reviewer 初审发现 `--force` 可能递归删除任意目录；已改为只覆盖已确认是同 id MCPHub 插件目录的生成文件，并补非插件目录拒绝覆盖测试。
+  - code quality reviewer 初审发现 `plugin:verify` 按 basename 匹配 manifest 可能选错 sibling；已改为通过 `loaded_plugin` diagnostic 的 exact `pluginDir` 绑定目标 manifest，并补目录名与 manifest id 不一致场景测试。
+  - code quality re-review：APPROVED。
+- 最终验证：
+  - `pnpm test`：14 个测试文件、97 个测试通过。
+  - `pnpm lint`：通过。
+  - `pnpm typecheck`：通过。
+  - `pnpm plugin:create dev-http --template http-api --out /tmp/mcphub-plugin-devx-final3 --tool-name dev.http.read --force`：通过。
+  - `pnpm plugin:create dev-executor --template executor --out /tmp/mcphub-plugin-devx-final3 --tool-name dev.executor.run --force`：通过。
+  - `pnpm plugin:create dev_exec --template executor --out /tmp/mcphub-plugin-devx-final3 --tool-name dev.exec.run --force`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx-final3/dev-http`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx-final3/dev-executor`：通过。
+  - `pnpm plugin:verify /tmp/mcphub-plugin-devx-final3/dev_exec`：通过。
+  - `pnpm test:plugin`：提升本地监听权限后通过，输出 `Example executor plugin verification passed`。
+  - `git diff --check`：通过。
+- 创建/修改的文件：
+  - `package.json`
+  - `packages/core/src/schemas.ts`
+  - `packages/core/src/core.test.ts`
+  - `scripts/plugin-create.ts`
+  - `scripts/plugin-verify.ts`
+  - `scripts/plugin-dev/common.ts`
+  - `scripts/plugin-dev/create.ts`
+  - `scripts/plugin-dev/templates.ts`
+  - `scripts/plugin-dev/verify.ts`
+  - `scripts/plugin-cli.test.ts`
+  - `docs/plugins/development.md`
+  - `README.md`
+  - `task_plan.md`
+  - `progress.md`
+- 完成时间：2026-06-07 CST
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*
