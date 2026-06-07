@@ -84,8 +84,8 @@ export const sourceSearchFiltersSchema = z.object({
   hostname: z.string().optional()
 });
 
-export const pluginIdSchema = z.string().regex(/^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)*$/, {
-  message: "Plugin IDs must be lowercase kebab or dotted lowercase identifiers."
+export const pluginIdSchema = z.string().regex(/^[a-z][a-z0-9_-]*(\.[a-z][a-z0-9_-]*)*$/, {
+  message: "Plugin IDs must be lowercase slug or dotted lowercase identifiers."
 });
 
 export const pluginToolNameSchema = z.string().regex(/^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/, {

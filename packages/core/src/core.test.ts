@@ -153,6 +153,27 @@ describe("platform schemas", () => {
     ).toThrow();
   });
 
+  it("accepts underscore plugin ids", () => {
+    const manifest = pluginManifestSchema.parse({
+      id: "admin_users",
+      name: "Admin Users",
+      version: "0.1.0",
+      type: "api",
+      description: "Underscore plugin id.",
+      tools: [
+        {
+          name: "admin.users.list",
+          description: "List users.",
+          inputSchema: {},
+          effect: "read",
+          operation: { type: "http", method: "GET", path: "/api/users" }
+        }
+      ]
+    });
+
+    expect(manifest.id).toBe("admin_users");
+  });
+
   it("rejects duplicate tool names in a plugin manifest", () => {
     const tool = {
       name: "admin.users.list",
