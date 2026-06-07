@@ -346,5 +346,21 @@
   - `findings.md`
   - `progress.md`
 
+### 阶段 18：插件开发者体验设计
+- **状态：** in_progress
+- **开始时间：** 2026-06-07 CST
+- 执行的操作：
+  - 用户要求继续规划下一阶段工作，并确认优先按照“插件开发者体验”推进。
+  - 已恢复当前 Git、任务计划、进度、发现记录和最近提交上下文。
+  - 已检查当前 `package.json` 脚本、`packages/plugins/src/sdk.ts` 插件 SDK、README 中本地插件/executor/demo 文档，以及 `examples/plugins/fake-upload` 和 `scripts/verify-example-plugin.ts`。
+  - 初步确认下一阶段应围绕插件脚手架、插件开发文档、本地调试/验证命令和模板化示例展开。
+  - 用户确认首版脚手架采用参数式 CLI，不做交互式向导；生成后的业务代码由用户自行修改。
+  - 用户确认采用方案 C：`plugin:create` + `plugin:verify` + 开发文档。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-07-plugin-developer-experience-design.md`。
+  - 完成设计文档自检：无 TBD/TODO；范围明确排除交互式 CLI、插件市场、真实第三方 API 生成、OpenAPI import 和浏览器自动化；修正一处中英文粘连表述。
+- 下一步：
+  - 用户审阅设计文档。
+  - 用户确认后进入实施计划。
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*

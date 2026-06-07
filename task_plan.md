@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 17：插件验证 Demo 固化
+阶段 18：插件开发者体验设计
 
 ## 各阶段
 
@@ -157,6 +157,16 @@
 - [x] 更新 README，说明用户如何查看 demo 和运行验证
 - **状态：** complete
 
+### 阶段 18：插件开发者体验设计
+- [x] 恢复当前项目结构、插件 SDK、示例插件和验证脚本上下文
+- [x] 确认下一阶段优先做插件开发者体验
+- [x] 明确脚手架和开发文档的目标用户、范围和验收标准
+- [x] 提出 2-3 种实现路线并给出推荐
+- [x] 用户确认设计后写入设计文档
+- [x] 设计文档自检并提交
+- [ ] 用户审阅设计文档后进入实施计划
+- **状态：** in_progress
+
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
 2. MCP 输出应以 resources 为主、tools 为主，还是二者结合？已回答：Resources + Tools 组合。
@@ -195,6 +205,9 @@
 | 插件自定义执行器设计和实施计划已写入 | `docs/superpowers/specs/2026-06-03-plugin-executor-runtime-design.md` 和 `docs/superpowers/plans/2026-06-03-plugin-executor-runtime-implementation-plan.md` |
 | 插件自定义执行器 P2 已实现并验证通过 | 支持 `executor: { type: "module", handler }`、本地 handler 加载、gateway 执行、checkpoint audit、fake upload smoke |
 | 插件验证 Demo 已固化 | `examples/plugins/fake-upload` 可直接查看代码，`pnpm test:plugin` 可验证 MCPHub 正确加载并执行插件 |
+| 插件开发者体验作为下一阶段 | 用户选择先做脚手架、调试命令和开发文档，降低用户从零编写 MCPHub 插件的门槛 |
+| 插件脚手架首版采用参数式 CLI | 用户选择只实现参数式 CLI，不做交互向导；业务细节由用户自行修改生成后的插件代码 |
+| 插件开发者体验设计文档已写入 | `docs/superpowers/specs/2026-06-07-plugin-developer-experience-design.md` 定义 `plugin:create`、`plugin:verify` 和插件开发文档范围 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
