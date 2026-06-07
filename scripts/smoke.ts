@@ -7,6 +7,7 @@ import { ExtractionService, FixtureFetcher } from "@mcphub/extractors";
 import { createApp } from "../apps/server/src/app.js";
 import { loadConfig } from "../apps/server/src/config.js";
 import { createPlatformServices } from "../apps/server/src/platform.js";
+import { assertEqual, assertIncludes, assertNotIncludes, assertStatus, getJson, mcpText, postJson } from "./smoke-helpers.js";
 
 const articleHtml = `
   <html>
@@ -136,6 +137,19 @@ try {
   assertStatus(detect.status, 200, "detect status");
   assertEqual(detect.body.status, "available", "detect result");
 
+  const status = await getJson(`${baseUrl}/api/status`);
+  assertStatus(status.status, 200, "status API status");
+  assertEqual(status.body.service, "mcphub", "status API service");
+  assertIncludes(status.body, "mcphub://status", "status API includes status resource");
+  assertIncludes(status.body, "local.admin.users.list", "status API includes local tool");
+  assertNotIncludes(status.body, "local-secret-token", "status API redacts local secret value");
+
+  const plugins = await getJson(`${baseUrl}/api/plugins`);
+  assertStatus(plugins.status, 200, "plugins API status");
+  assertIncludes(plugins.body, "local-admin", "plugins API includes local-admin");
+  assertIncludes(plugins.body, "loaded_plugin", "plugins API includes load diagnostics");
+  assertNotIncludes(plugins.body, "local-secret-token", "plugins API redacts local secret value");
+
   const init = await postJson(`${baseUrl}/mcp`, {
     jsonrpc: "2.0",
     id: 0,
@@ -163,6 +177,18 @@ try {
   assertIncludes(pluginListText, "local-admin", "plugin list includes local admin");
   assertIncludes(pluginListText, "\"source\": \"local\"", "plugin list includes local metadata");
   assertNotIncludes(pluginListText, "local-secret-token", "plugin list redacts local secret value");
+
+  const statusResource = await postJson(`${baseUrl}/mcp`, {
+    jsonrpc: "2.0",
+    id: 10,
+    method: "resources/read",
+    params: { uri: "mcphub://status" }
+  });
+  assertStatus(statusResource.status, 200, "status resource status");
+  const statusResourceText = mcpText(statusResource.body);
+  assertIncludes(statusResourceText, "mcphub://status", "status resource includes status URI");
+  assertIncludes(statusResourceText, "fake.upload.video", "status resource includes executor tool");
+  assertNotIncludes(statusResourceText, "fake-upload-secret", "status resource redacts fake upload secret");
 
   const toolList = await postJson(`${baseUrl}/mcp`, { jsonrpc: "2.0", id: 12, method: "tools/list", params: {} });
   assertStatus(toolList.status, 200, "tools/list status");
@@ -297,81 +323,6 @@ try {
   await app.close();
   await adminServer.close();
   await rm(pluginDir, { recursive: true, force: true });
-}
-
-async function postJson(url: string, payload: unknown): Promise<{ status: number; body: any }> {
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "content-type": "application/json", accept: "application/json, text/event-stream" },
-    body: JSON.stringify(payload)
-  });
-  const text = await response.text();
-  try {
-    return { status: response.status, body: JSON.parse(text) };
-  } catch {
-    return { status: response.status, body: text };
-  }
-}
-
-function assertStatus(actual: number, expected: number, label: string): void {
-  if (actual !== expected) {
-    throw new Error(`${label}: expected ${expected}, got ${actual}`);
-  }
-}
-
-function assertEqual<T>(actual: T, expected: T, label: string): void {
-  if (actual !== expected) {
-    throw new Error(`${label}: expected ${String(expected)}, got ${String(actual)}`);
-  }
-}
-
-function assertIncludes(value: unknown, expected: string, label: string): void {
-  const actual = stringifyForAssertion(value);
-  if (!actual.includes(expected)) {
-    throw new Error(`${label}: expected body to include ${expected}. Actual: ${actual.slice(0, 1000)}`);
-  }
-}
-
-function assertNotIncludes(value: unknown, unexpected: string, label: string): void {
-  const actual = stringifyForAssertion(value);
-  if (actual.includes(unexpected)) {
-    throw new Error(`${label}: expected body not to include ${unexpected}`);
-  }
-}
-
-function stringifyForAssertion(value: unknown): string {
-  return typeof value === "string" ? value : JSON.stringify(value);
-}
-
-function mcpText(body: unknown): string {
-  if (typeof body === "string" && body.startsWith("event:")) {
-    const dataLine = body
-      .split("\n")
-      .map((line) => line.trim())
-      .find((line) => line.startsWith("data: "));
-    if (dataLine) {
-      try {
-        return mcpText(JSON.parse(dataLine.slice("data: ".length)));
-      } catch {
-        return body;
-      }
-    }
-  }
-  if (!body || typeof body !== "object") {
-    return stringifyForAssertion(body);
-  }
-  const record = body as {
-    result?: {
-      content?: Array<{ text?: string }>;
-      contents?: Array<{ text?: string }>;
-    };
-  };
-  const contentText = record.result?.content?.map((entry) => entry.text ?? "").join("\n");
-  if (contentText) {
-    return contentText;
-  }
-  const contentsText = record.result?.contents?.map((entry) => entry.text ?? "").join("\n");
-  return contentsText || stringifyForAssertion(body);
 }
 
 async function startFixtureServer(handler: (request: IncomingMessage, response: ServerResponse) => void | Promise<void>): Promise<{
