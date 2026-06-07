@@ -522,7 +522,11 @@
     - `pnpm test:plugin` 通过。
 - 下一步：
   - 代码质量复审通过，确认当前工作树未发现必须修复项。
-  - 下一步按功能拆分提交。
+  - 已按功能拆分提交：
+    - `257a62c Add platform status diagnostics`
+    - `a84ed81 Add dev release smoke checks`
+    - `fea16dd Document dev release operations`
+  - 补齐规划文件状态：阶段 21、阶段 22 均完成。
 
 ---
 *每个阶段完成后或遇到错误时更新此文件*

@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 21：Dev 版本上线能力实施计划
+阶段 22：Dev 版本上线能力实现
 
 ## 各阶段
 
@@ -197,7 +197,7 @@
 - [x] 恢复 dev release readiness 设计文档、当前规划状态和仓库状态
 - [x] 写入 `docs/superpowers/plans/2026-06-08-dev-release-readiness-implementation-plan.md`
 - [x] 自检实施计划覆盖状态接口、插件诊断、MCP status、smoke、文档、测试和验收标准
-- [ ] 提交实施计划和规划文件
+- [x] 提交实施计划和规划文件
 - [x] 用户审阅实施计划后进入代码实现
 - **状态：** complete
 
@@ -212,7 +212,7 @@
 - [x] Phase 7：测试与回归覆盖
 - [x] Phase 8：最终验证
 - [x] Phase 9：提交和交付
-- **状态：** in_progress
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？
