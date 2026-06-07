@@ -444,5 +444,18 @@
   - 完成设计文档自检：新文档未发现 TBD/TODO/FIXME/占位符；范围明确排除管理 UI、插件市场、远程插件安装、多租户认证、生产级安全加固和更多业务插件样例。
   - 下一步提交设计文档，并请求用户审阅后再进入实施计划。
 
+### 阶段 21：Dev 版本上线能力实施计划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户认可 `docs/superpowers/specs/2026-06-07-dev-release-readiness-design.md`，要求继续。
+  - 恢复设计文档、`task_plan.md`、`progress.md`、当前 Git 状态和仓库文件结构。
+  - 当前分支 `develope` 比 `origin/develope` 领先 6 个提交。
+  - 当前仍有未跟踪用户实验插件目录 `examples/plugins/my-admin/` 和 `examples/plugins/my-workflow/`，实施计划明确不删除、不覆盖、不提交。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-08-dev-release-readiness-implementation-plan.md`。
+- 下一步：
+  - 完成实施计划自检：计划覆盖状态模型、HTTP status/plugins API、MCP status resource、MCP 可见性摘要、local/Docker smoke、部署与诊断文档、测试和最终验证。
+  - 下一步提交实施计划和规划文件，并请求用户审阅后再进入代码实现。
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*

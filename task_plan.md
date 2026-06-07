@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 20：后续路线规划
+阶段 21：Dev 版本上线能力实施计划
 
 ## 各阶段
 
@@ -190,7 +190,15 @@
 - [x] 围绕可上线/可应用 dev 版本提出 2-3 种后续路线并给出推荐
 - [x] 用户确认后写入下一阶段设计文档
 - [x] 设计文档自检并提交
-- [ ] 用户审阅设计文档后进入实施计划
+- [x] 用户审阅设计文档后进入实施计划
+- **状态：** complete
+
+### 阶段 21：Dev 版本上线能力实施计划
+- [x] 恢复 dev release readiness 设计文档、当前规划状态和仓库状态
+- [x] 写入 `docs/superpowers/plans/2026-06-08-dev-release-readiness-implementation-plan.md`
+- [x] 自检实施计划覆盖状态接口、插件诊断、MCP status、smoke、文档、测试和验收标准
+- [ ] 提交实施计划和规划文件
+- [ ] 用户审阅实施计划后进入代码实现
 - **状态：** in_progress
 
 ## 关键问题
@@ -239,6 +247,9 @@
 | 阶段 20 方向修正为 dev 版本上线能力 | 用户明确不继续插件优化，不做单一业务插件样板；目标是对齐 RSSHub 式中间平台，做一个能够上线或应用的 dev 版本 |
 | 阶段 20 优先级确认 | 用户认可先做“部署可用 + 平台可见性”，之后再强化开发者扩展标准 |
 | dev release readiness 设计文档已写入 | `docs/superpowers/specs/2026-06-07-dev-release-readiness-design.md` 定义 dev 版本的部署、诊断、验证、文档、错误处理和验收标准 |
+| dev release readiness 设计文档已获批 | 用户认可设计文档并要求继续进入后续工作 |
+| dev release readiness 实施计划已写入 | `docs/superpowers/plans/2026-06-08-dev-release-readiness-implementation-plan.md` 拆分状态模型、HTTP API、MCP status、可见性摘要、smoke、文档、测试、验证和提交阶段 |
+| dev release readiness 实施计划已自检 | 实施计划包含验收标准映射表，覆盖设计文档中的本地/Docker 启动、状态接口、MCP status、插件诊断、工具资源可见性、smoke 和故障排查文档 |
 
 ## 遇到的错误
 | 错误 | 尝试次数 | 解决方案 |
