@@ -457,5 +457,72 @@
   - 完成实施计划自检：计划覆盖状态模型、HTTP status/plugins API、MCP status resource、MCP 可见性摘要、local/Docker smoke、部署与诊断文档、测试和最终验证。
   - 下一步提交实施计划和规划文件，并请求用户审阅后再进入代码实现。
 
+### 阶段 22：Dev 版本上线能力实现
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求使用 `$executing-plans` 与 `$subagent-driven-development` 按实施计划完成任务。
+  - 已读取两个技能说明和 `docs/superpowers/plans/2026-06-08-dev-release-readiness-implementation-plan.md`。
+  - 当前分支 `develope` 比 `origin/develope` 领先 7 个提交；工作树仍有未跟踪用户实验插件目录 `examples/plugins/my-admin/` 与 `examples/plugins/my-workflow/`，继续不删除、不覆盖、不提交。
+  - Phase 0 基线验证通过：
+    - `pnpm typecheck` 通过。
+    - `pnpm test` 通过，14 个测试文件、97 个测试。
+    - `pnpm test:plugin` 通过，输出 `Example executor plugin verification passed`。
+    - `pnpm test:e2e` 通过，输出 `Smoke test passed`。
+    - `docker compose config` 通过。
+- 下一步：
+  - 实现 Phase 1-4：运行状态模型、HTTP status/plugins API、MCP status resource 和 MCP 可见性摘要。
+  - 实现 `PlatformStatusSummary` 和 `mcphub://status`，并让 HTTP `/api/status` 复用同一套 gateway status builder。
+  - 新增 `/api/plugins`，返回已加载插件摘要和 local loader diagnostics。
+  - 扩展 `createPlatformServices()`，把 local plugin diagnostics、runtime repository mode、pluginDir、audit availability 带入 `PlatformGatewayOptions`；修复无插件但启用 PostgreSQL 时 status 丢失 repository mode 的问题。
+  - 新增 `scripts/smoke-helpers.ts`、`scripts/dev-smoke.ts`、`scripts/docker-smoke.ts`，并添加 `pnpm dev:smoke`、`pnpm docker:smoke`。
+  - 扩展 `scripts/smoke.ts`，覆盖 `/api/status`、`/api/plugins` 和 `mcphub://status`。
+  - 新增文档 `docs/deployment/dev.md` 与 `docs/operations/diagnostics.md`，更新 README 和 `.env.example`。
+  - 当前验证：
+    - `pnpm vitest run apps/server/src/app.test.ts packages/mcp/src/gateway.test.ts` 通过，2 个测试文件、18 个测试。
+    - `pnpm typecheck` 通过。
+    - `pnpm test:e2e` 通过。
+    - `pnpm dev:smoke` 通过，输出 `Dev smoke passed for http://127.0.0.1:3000`。
+    - `pnpm lint` 通过。
+    - `pnpm test` 通过，14 个测试文件、99 个测试。
+    - `pnpm test:plugin` 通过。
+    - `pnpm build` 通过。
+    - `docker compose config` 通过。
+    - `docker compose up --build -d server` 成功，期间 npm registry 有一次 `ERR_SOCKET_TIMEOUT` 重试但最终构建成功。
+    - `pnpm docker:smoke` 通过，输出 `Docker smoke passed for http://127.0.0.1:3000`。
+- 规格审查反馈与修复：
+  - 规格审查指出 Docker smoke 只验证 JSON shape，未证明插件状态和 audit path；已增强 `scripts/smoke-helpers.ts` 和 `scripts/docker-smoke.ts`，要求 Docker smoke 验证插件工具、plugin/audit resources，调用 `admin.users.disable` 并确认 blocked audit 出现在 `mcphub://audit/recent`。
+  - 规格审查指出 database health 静态写死为 true；已改为 `WebMcpGateway.getStatusSummary()` 在数据库配置存在时通过 repository 轻量查询确认健康。
+  - 规格审查指出 `expectPlugins` 语义过弱；已改为要求至少一个 loaded plugin，并验证 MCP plugin/audit resources 和指定插件 tool。
+  - 规格审查指出未记录 `git diff --check`；已运行 `git diff --check` 并通过。
+  - 更新 README 和 `docs/deployment/dev.md`，明确 Docker smoke 需要通过 sample admin plugin 验证 plugin/audit 路径。
+  - 修复后复测：
+    - `pnpm typecheck` 通过。
+    - `pnpm vitest run apps/server/src/app.test.ts packages/mcp/src/gateway.test.ts` 通过。
+    - `pnpm test:e2e` 通过。
+    - `SAMPLE_ADMIN_API_BASE_URL=http://host.docker.internal:4001 SAMPLE_ADMIN_API_TOKEN=dev-token docker compose up --build -d server` 成功，期间 npm registry 有 `ERR_SOCKET_TIMEOUT` 重试但最终构建成功。
+    - `pnpm docker:smoke` 通过。
+    - `git diff --check` 通过。
+  - 代码质量审查指出 `/api/status` 不应随 audit 表增长、DB 异常不能导致 500、`/api/plugins` 不应泄漏完整本地路径、`/api/plugins` 不应依赖 MCP JSON 字符串反序列化；已修复：
+    - `getStatusSummary()` 不再读取 audit 表，只报告 audit availability。
+    - 数据库配置存在时通过 repository 轻量查询判定健康，异常返回 `status: "degraded"` 和 `databaseHealthy: false`。
+    - 新增 typed `getPlatformDiagnostics()`，`/api/plugins` 直接调用 typed gateway 方法，不再 `JSON.parse(readResource(...))`。
+    - plugin metadata 和 diagnostics 中的本地路径压缩为末尾两段，diagnostic details 不暴露。
+    - `dev:smoke` 默认不要求插件；只有 `MCPHUB_SMOKE_EXPECT_PLUGINS=true` 时才执行插件严格检查。
+  - 质量修复后复测：
+    - `pnpm vitest run apps/server/src/app.test.ts packages/mcp/src/gateway.test.ts` 通过，2 个测试文件、19 个测试。
+    - `pnpm typecheck` 通过。
+    - `MCPHUB_BASE_URL=http://127.0.0.1:3001 pnpm dev:smoke` 通过。
+    - `pnpm test` 通过，14 个测试文件、100 个测试。
+    - `pnpm lint` 通过。
+    - `pnpm test:e2e` 通过。
+    - `pnpm docker:smoke` 通过。
+    - `git diff --check` 通过。
+    - `pnpm build` 通过。
+    - `pnpm test:plugin` 通过。
+- 下一步：
+  - 代码质量复审通过，确认当前工作树未发现必须修复项。
+  - 下一步按功能拆分提交。
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*

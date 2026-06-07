@@ -198,7 +198,20 @@
 - [x] 写入 `docs/superpowers/plans/2026-06-08-dev-release-readiness-implementation-plan.md`
 - [x] 自检实施计划覆盖状态接口、插件诊断、MCP status、smoke、文档、测试和验收标准
 - [ ] 提交实施计划和规划文件
-- [ ] 用户审阅实施计划后进入代码实现
+- [x] 用户审阅实施计划后进入代码实现
+- **状态：** complete
+
+### 阶段 22：Dev 版本上线能力实现
+- [x] Phase 0：基线与工作树保护
+- [x] Phase 1：运行状态模型
+- [x] Phase 2：HTTP status 和 plugin diagnostics API
+- [x] Phase 3：MCP status resource
+- [x] Phase 4：MCP 可见性摘要
+- [x] Phase 5：local/Docker smoke 命令集
+- [x] Phase 6：部署和诊断文档
+- [x] Phase 7：测试与回归覆盖
+- [x] Phase 8：最终验证
+- [x] Phase 9：提交和交付
 - **状态：** in_progress
 
 ## 关键问题

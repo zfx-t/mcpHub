@@ -20,6 +20,12 @@ pnpm dev
 
 The server defaults to seeded in-memory data when `DATABASE_URL` is not set.
 
+Verify a running local server:
+
+```bash
+pnpm dev:smoke
+```
+
 ## PostgreSQL Mode
 
 Start PostgreSQL for local development:
@@ -39,8 +45,13 @@ On startup the server applies `packages/db/src/schema.sql` and seeds sample Sour
 Run the full self-host stack:
 
 ```bash
-docker compose up --build server
+SAMPLE_ADMIN_API_BASE_URL=http://host.docker.internal:4001 \
+SAMPLE_ADMIN_API_TOKEN=dev-token \
+docker compose up --build -d server
+pnpm docker:smoke
 ```
+
+Detailed dev deployment instructions are in [docs/deployment/dev.md](docs/deployment/dev.md).
 
 ## HTTP API
 
@@ -48,6 +59,18 @@ Health:
 
 ```bash
 curl http://localhost:3000/healthz
+```
+
+Runtime status:
+
+```bash
+curl http://localhost:3000/api/status
+```
+
+Plugin diagnostics:
+
+```bash
+curl http://localhost:3000/api/plugins
 ```
 
 Detect a site:
@@ -74,7 +97,11 @@ Supported methods:
 - `tools/list`
 - `tools/call`
 
-Platform resources are available when plugins are registered:
+Platform status is always available:
+
+- `mcphub://status`
+
+Additional platform resources are available when plugins are registered:
 
 - `mcphub://plugins`
 - `mcphub://plugins/{pluginId}`
@@ -366,4 +393,9 @@ pnpm lint
 pnpm test
 pnpm build
 pnpm test:e2e
+pnpm test:plugin
+pnpm dev:smoke
+pnpm docker:smoke
 ```
+
+Operational diagnostics are documented in [docs/operations/diagnostics.md](docs/operations/diagnostics.md).
