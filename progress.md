@@ -425,5 +425,24 @@
   - `progress.md`
 - 完成时间：2026-06-07 CST
 
+### 阶段 20：后续路线规划
+- **状态：** in_progress
+- **开始时间：** 2026-06-07 CST
+- 执行的操作：
+  - 用户要求继续规划后面的工作计划，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已重新读取技能说明、Git 状态、最近提交、`task_plan.md`、`progress.md`、`findings.md` 和现有设计/计划/插件文件清单。
+  - 当前分支 `develope` 比 `origin/develope` 领先 5 个提交。
+  - 当前工作树存在未跟踪目录 `examples/plugins/my-admin/` 和 `examples/plugins/my-workflow/`，判断为用户按教程生成的本地实验插件，后续规划不清理、不提交、不覆盖。
+  - 已将 `task_plan.md` 当前阶段更新为阶段 20，并将阶段 18 补标为 complete。
+  - 用户明确否定继续优化单一插件/业务样板的预测方向，要求对齐 RSSHub 式平台方向：可自部署、开发者可扩展、通过标准约定把没有 MCP 的能力无痛转换为 MCP。
+  - 重新读取 README、package scripts、规划文件和当前仓库状态，确认现有底座已有 MCP endpoint、Docker、插件加载、HTTP/executor tool、凭据、策略、审计和开发者 CLI，但尚缺少一个“可上线/可应用 dev 版本”的产品化闭环。
+  - 将下一阶段规划目标修正为 dev release readiness：稳定运行配置、部署验收、实例可观测/诊断、开发者扩展标准和可复现 smoke，而不是继续增加具体业务插件。
+  - 用户认可推荐优先级：先做“部署可用 + 平台可见性”组合路线，再进入开发者标准强化。
+- 下一步：
+  - 已提出三种路线：部署可用、平台可见性、两者合并；用户确认采用合并路线。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-07-dev-release-readiness-design.md`。
+  - 完成设计文档自检：新文档未发现 TBD/TODO/FIXME/占位符；范围明确排除管理 UI、插件市场、远程插件安装、多租户认证、生产级安全加固和更多业务插件样例。
+  - 下一步提交设计文档，并请求用户审阅后再进入实施计划。
+
 ---
 *每个阶段完成后或遇到错误时更新此文件*

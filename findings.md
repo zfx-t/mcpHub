@@ -107,6 +107,9 @@
 | 插件验证 demo 已固化 | `examples/plugins/fake-upload` 提供可读示例，`scripts/verify-example-plugin.ts` 通过真实 MCP HTTP 调用验证插件加载、执行和 checkpoint audit |
 | 插件开发者体验是下一阶段瓶颈 | runtime 已能加载/执行插件，但用户仍需要手动组织目录、配置、handler、验证脚本和文档；下一阶段应把“从零创建插件到本地验证通过”固化为标准路径 |
 | 插件开发者体验实施路线确定 | 采用参数式 `plugin:create` 生成 `http-api`/`executor` 模板，使用 `plugin:verify` 复用本地 loader 做静态加载验证，文档集中到 `docs/plugins/development.md` |
+| 用户本地生成插件目录需保留 | 当前 `examples/plugins/my-admin/` 和 `examples/plugins/my-workflow/` 是未跟踪目录，推断为用户按教程生成的实验插件；后续规划和提交应避免误清理或纳入 |
+| 阶段 20 应对齐 RSSHub 式平台，不继续做业务插件优化 | 用户明确指出目标是类似 RSSHub 的中间平台/标准软件项目：可部署、可使用、开发者按标准自行扩展 route/plugin，把没有 MCP 的能力转换为 MCP |
+| dev 版本缺口在产品化闭环而非插件表达能力 | 当前已有 MCP endpoint、插件加载、HTTP/executor tool、凭据、策略、审计、Docker 和 CLI；下一步更应补稳定配置、部署文档、健康检查/诊断、版本契约、验收脚本和实例运维可见性 |
 
 ## 平台化演进草案
 
