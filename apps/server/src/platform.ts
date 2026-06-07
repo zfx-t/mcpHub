@@ -53,6 +53,7 @@ export async function createPlatformServices(input: PlatformServicesInput): Prom
     await input.repository.upsertPlugin(plugin);
     pluginMetadata[plugin.id] = {
       source: "local",
+      pluginDir: localPlugins.diagnostics.find((diagnostic) => diagnostic.pluginId === plugin.id && diagnostic.code === "loaded_plugin")?.pluginDir,
       credentials: localPlugins.seed.credentials
         .filter((credential) => credential.pluginId === plugin.id)
         .map((credential) => ({
@@ -71,8 +72,15 @@ export async function createPlatformServices(input: PlatformServicesInput): Prom
   manifests.push(...localPlugins.manifests);
   Object.assign(pluginPolicies, localPlugins.policies);
 
+  const runtime = {
+    repositoryMode: input.config.databaseUrl ? ("postgres" as const) : ("memory" as const),
+    databaseConfigured: Boolean(input.config.databaseUrl),
+    pluginDir: input.config.pluginDir,
+    auditEnabled: hasPlatformState
+  };
+
   if (!hasPlatformState) {
-    return undefined;
+    return { runtime };
   }
 
   return {
@@ -81,6 +89,8 @@ export async function createPlatformServices(input: PlatformServicesInput): Prom
     auditLogger: new AuditLogger({ repository: input.repository }),
     pluginPolicies,
     pluginMetadata,
-    executorHandlers: localPlugins.handlers
+    executorHandlers: localPlugins.handlers,
+    diagnostics: localPlugins.diagnostics,
+    runtime
   };
 }

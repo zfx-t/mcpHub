@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import type { FastifyInstance } from "fastify";
 import { AuditLogger } from "@mcphub/audit";
 import { createSeedRepository } from "@mcphub/db";
+import type { McpHubRepository } from "@mcphub/db";
 import { ExtractionService, FixtureFetcher } from "@mcphub/extractors";
 import { PluginRegistry, sampleAdminPlugin } from "@mcphub/plugins";
 import { createApp } from "./app.js";
@@ -200,7 +201,7 @@ describe("server app", () => {
 
       expect(platform?.registry?.getManifest("local-admin")).toBeDefined();
       expect(platform?.pluginPolicies?.["local-admin"]).toEqual({ dangerousMode: "allow" });
-      expect(platform?.pluginMetadata?.["local-admin"]).toEqual({
+      expect(platform?.pluginMetadata?.["local-admin"]).toMatchObject({
         source: "local",
         credentials: [{ id: "admin-token", type: "bearer", configured: true }]
       });
@@ -208,6 +209,109 @@ describe("server app", () => {
     } finally {
       await rm(pluginDir, { recursive: true, force: true });
     }
+  });
+
+  it("exposes platform status and plugin diagnostics over HTTP", async () => {
+    const repo = createSeedRepository();
+    const pluginDir = await mkdtemp(path.join(os.tmpdir(), "mcphub-app-status-"));
+    try {
+      const validPath = path.join(pluginDir, "local-admin");
+      await mkdir(validPath, { recursive: true });
+      await writeFile(path.join(validPath, "index.js"), localPluginModuleSource("local-admin", "local.admin"));
+      await writeFile(
+        path.join(validPath, "plugin.config.json"),
+        JSON.stringify(
+          {
+            enabled: true,
+            config: { baseUrl: "https://admin.local" },
+            credentials: { "admin-token": { type: "bearer", secretRef: "env:LOCAL_ADMIN_TOKEN" } },
+            policy: { dangerousMode: "auditOnly" }
+          },
+          null,
+          2
+        )
+      );
+      const disabledPath = path.join(pluginDir, "disabled-admin");
+      await mkdir(disabledPath, { recursive: true });
+      await writeFile(path.join(disabledPath, "index.js"), localPluginModuleSource("disabled-admin", "disabled.admin"));
+      await writeFile(path.join(disabledPath, "plugin.config.json"), JSON.stringify({ enabled: false }, null, 2));
+      await mkdir(path.join(pluginDir, "broken-admin"), { recursive: true });
+
+      const config = loadConfig({
+        REQUEST_LOGGING: "false",
+        MCPHUB_PLUGIN_DIR: pluginDir
+      });
+      const platform = await createPlatformServices({ repository: repo, config, env: { LOCAL_ADMIN_TOKEN: "secret-value" } });
+      const app = createApp({
+        repository: repo,
+        extraction: new ExtractionService(repo, new FixtureFetcher({})),
+        config,
+        platform
+      });
+
+      const statusResponse = await app.inject({ method: "GET", url: "/api/status" });
+      expect(statusResponse.statusCode).toBe(200);
+      const status = statusResponse.json() as {
+        service: string;
+        repository: { mode: string; databaseConfigured: boolean };
+        plugins: { directoryConfigured: boolean; loaded: number; disabled: number; diagnostics: number };
+        mcp: { resources: { uris: string[] }; tools: { names: string[]; pluginTools: Array<{ name: string; execution: string }> } };
+      };
+      expect(status).toMatchObject({
+        service: "mcphub",
+        repository: { mode: "memory", databaseConfigured: false },
+        plugins: { directoryConfigured: true, loaded: 1, disabled: 1 }
+      });
+      expect(status.plugins.diagnostics).toBeGreaterThanOrEqual(3);
+      expect(status.mcp.resources.uris).toContain("mcphub://status");
+      expect(status.mcp.tools.names).toContain("local.admin.users.list");
+      expect(status.mcp.tools.pluginTools).toEqual(
+        expect.arrayContaining([expect.objectContaining({ name: "local.admin.users.list", execution: "http" })])
+      );
+      expect(statusResponse.body).not.toContain("secret-value");
+
+      const pluginsResponse = await app.inject({ method: "GET", url: "/api/plugins" });
+      expect(pluginsResponse.statusCode).toBe(200);
+      expect(pluginsResponse.body).toContain("local-admin");
+      expect(pluginsResponse.body).toContain("disabled_plugin");
+      expect(pluginsResponse.body).toContain("missing_entrypoint");
+      expect(pluginsResponse.body).toContain("mcphub-app-status-");
+      expect(pluginsResponse.body).not.toContain(pluginDir);
+      expect(pluginsResponse.body).not.toContain("secret-value");
+    } finally {
+      await rm(pluginDir, { recursive: true, force: true });
+    }
+  });
+
+  it("returns degraded status when the configured repository health check fails", async () => {
+    const repo = createSeedRepository();
+    const failingRepo = Object.assign(Object.create(repo), {
+      listSources: async () => {
+        throw new Error("database unavailable");
+      }
+    }) as McpHubRepository;
+    const app = createApp({
+      repository: failingRepo,
+      extraction: new ExtractionService(failingRepo, new FixtureFetcher({})),
+      config: loadConfig({
+        REQUEST_LOGGING: "false",
+        DATABASE_URL: "postgres://mcphub:mcphub@localhost:5432/mcphub"
+      }),
+      platform: {
+        runtime: {
+          repositoryMode: "postgres",
+          databaseConfigured: true
+        }
+      }
+    });
+
+    const response = await app.inject({ method: "GET", url: "/api/status" });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      status: "degraded",
+      repository: { mode: "postgres", databaseConfigured: true, databaseHealthy: false }
+    });
   });
 });
 

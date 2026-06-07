@@ -13,6 +13,17 @@ export function createSdkMcpServer(repository: McpHubRepository, extraction: Ext
   );
 
   server.registerResource(
+    "status",
+    "mcphub://status",
+    {
+      title: "MCPHub Status",
+      description: "Runtime status, plugin diagnostics summary, and MCP visibility.",
+      mimeType: "application/json"
+    },
+    async (uri) => ({ contents: await gateway.readResource(uri.toString()) })
+  );
+
+  server.registerResource(
     "sources",
     "webmcp://sources",
     {

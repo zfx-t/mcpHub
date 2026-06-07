@@ -35,10 +35,29 @@ describe("WebMcpGateway", () => {
     const repo = createSeedRepository();
     const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})));
 
+    expect(gateway.listResources()).toContainEqual(expect.objectContaining({ uri: "mcphub://status" }));
     expect(gateway.listResources()).toContainEqual(expect.objectContaining({ uri: "webmcp://sources" }));
     await expect(gateway.readResource("webmcp://sources")).resolves.toEqual([
       expect.objectContaining({ mimeType: "application/json" })
     ]);
+  });
+
+  it("exposes MCPHub status without plugins", async () => {
+    const repo = createSeedRepository();
+    const gateway = new WebMcpGateway(repo, new ExtractionService(repo, new FixtureFetcher({})));
+
+    const status = JSON.parse((await gateway.readResource("mcphub://status"))[0].text) as {
+      service: string;
+      repository: { mode: string };
+      plugins: { loaded: number; diagnostics: number };
+      mcp: { resources: { uris: string[] }; tools: { names: string[] } };
+    };
+
+    expect(status.service).toBe("mcphub");
+    expect(status.repository.mode).toBe("memory");
+    expect(status.plugins).toMatchObject({ loaded: 0, diagnostics: 0 });
+    expect(status.mcp.resources.uris).toContain("mcphub://status");
+    expect(status.mcp.tools.names).toContain("source.search");
   });
 
   it("refreshes sources through tools and reads items", async () => {
@@ -104,6 +123,9 @@ describe("WebMcpGateway", () => {
     ]);
     await expect(gateway.readResource("mcphub://plugins")).resolves.toEqual([
       expect.objectContaining({ text: expect.stringContaining('"source": "built_in"') })
+    ]);
+    await expect(gateway.readResource("mcphub://status")).resolves.toEqual([
+      expect.objectContaining({ text: expect.stringContaining('"admin.users.list"') })
     ]);
 
     const listResult = JSON.parse((await gateway.callTool("admin.users.list", { page: 1 }))[0].text) as {

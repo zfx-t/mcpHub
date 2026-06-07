@@ -8,6 +8,7 @@ import { sourceSearchFiltersSchema, toResourceUri } from "@mcphub/core";
 import type { CredentialType, FeedItem, PlatformErrorCode, Plugin, PluginTool } from "@mcphub/core";
 import type { McpHubRepository } from "@mcphub/db";
 import type { ExtractionService } from "@mcphub/extractors";
+import type { LocalPluginDiagnostic } from "@mcphub/plugins/local-loader";
 import type { PluginRegistry } from "@mcphub/plugins";
 import type { PluginHandlers } from "@mcphub/plugins";
 import { evaluateToolPolicy } from "@mcphub/policy";
@@ -31,6 +32,7 @@ export interface McpResourceDescriptor {
 export interface PlatformPluginMetadata {
   source: "built_in" | "local";
   credentials: Array<{ id: string; type: CredentialType; configured: boolean }>;
+  pluginDir?: string;
 }
 
 export interface PlatformGatewayOptions {
@@ -42,6 +44,61 @@ export interface PlatformGatewayOptions {
   pluginPolicies?: Record<string, PolicyConfig>;
   pluginMetadata?: Record<string, PlatformPluginMetadata>;
   executorHandlers?: Record<string, PluginHandlers>;
+  diagnostics?: LocalPluginDiagnostic[];
+  runtime?: PlatformRuntimeMetadata;
+}
+
+export interface PlatformRuntimeMetadata {
+  repositoryMode?: "memory" | "postgres";
+  pluginDir?: string;
+  databaseConfigured?: boolean;
+  databaseHealthy?: boolean;
+  auditEnabled?: boolean;
+}
+
+export interface PlatformStatusSummary {
+  service: "mcphub";
+  status: "ok" | "degraded";
+  version: string;
+  repository: {
+    mode: "memory" | "postgres";
+    databaseConfigured: boolean;
+    databaseHealthy: boolean;
+  };
+  plugins: {
+    directoryConfigured: boolean;
+    directory?: string;
+    loaded: number;
+    disabled: number;
+    diagnostics: number;
+    bySource: Record<string, number>;
+  };
+  mcp: {
+    resources: {
+      count: number;
+      uris: string[];
+    };
+    tools: {
+      count: number;
+      names: string[];
+      pluginTools: PlatformToolSummary[];
+    };
+  };
+  audit: {
+    enabled: boolean;
+  };
+}
+
+export interface PlatformPluginsDiagnostics {
+  plugins: DecoratedPlugin[];
+  diagnostics: LocalPluginDiagnostic[];
+}
+
+export interface PlatformToolSummary {
+  name: string;
+  pluginId?: string;
+  effect?: PluginTool["effect"];
+  execution?: "http" | "executor" | "builtin";
 }
 
 type DecoratedPlugin = Plugin & Partial<PlatformPluginMetadata>;
@@ -69,6 +126,13 @@ export class WebMcpGateway {
 
   listResources(): McpResourceDescriptor[] {
     const resources = [
+      {
+        uri: "mcphub://status",
+        name: "status",
+        title: "MCPHub Status",
+        description: "Runtime status, plugin diagnostics summary, and MCP visibility.",
+        mimeType: "application/json"
+      },
       {
         uri: "webmcp://sources",
         name: "sources",
@@ -99,6 +163,10 @@ export class WebMcpGateway {
   }
 
   async readResource(uri: string): Promise<McpContent[]> {
+    if (uri === "mcphub://status") {
+      return jsonContent(uri, await this.getStatusSummary());
+    }
+
     if (uri === "mcphub://plugins") {
       return jsonContent(uri, await this.listPlatformPlugins());
     }
@@ -189,6 +257,65 @@ export class WebMcpGateway {
       }
     }
     return tools;
+  }
+
+  async getStatusSummary(): Promise<PlatformStatusSummary> {
+    const resources = this.listResources();
+    const tools = this.listTools();
+    const pluginTools = this.platform.registry?.listPluginTools() ?? [];
+    const databaseHealthy = await this.checkDatabaseHealth();
+    const plugins = databaseHealthy ? await this.safeListPlatformPlugins() : [];
+    const diagnostics = this.platform.diagnostics ?? [];
+    const bySource: Record<string, number> = {};
+    for (const plugin of plugins) {
+      const source = plugin.source ?? "unknown";
+      bySource[source] = (bySource[source] ?? 0) + 1;
+    }
+
+    return {
+      service: "mcphub",
+      status: databaseHealthy ? "ok" : "degraded",
+      version: "0.1.0",
+      repository: {
+        mode: this.platform.runtime?.repositoryMode ?? "memory",
+        databaseConfigured: this.platform.runtime?.databaseConfigured ?? this.platform.runtime?.repositoryMode === "postgres",
+        databaseHealthy
+      },
+      plugins: {
+        directoryConfigured: Boolean(this.platform.runtime?.pluginDir),
+        directory: this.platform.runtime?.pluginDir ? safePathSummary(this.platform.runtime.pluginDir) : undefined,
+        loaded: plugins.length,
+        disabled: diagnostics.filter((diagnostic) => diagnostic.code === "disabled_plugin").length,
+        diagnostics: diagnostics.length,
+        bySource
+      },
+      mcp: {
+        resources: {
+          count: resources.length,
+          uris: resources.map((resource) => resource.uri)
+        },
+        tools: {
+          count: tools.length,
+          names: tools.map((tool) => tool.name),
+          pluginTools: pluginTools.map((tool) => ({
+            name: tool.name,
+            pluginId: tool.pluginId,
+            effect: tool.effect,
+            execution: tool.executor ? "executor" : tool.operation?.type === "http" ? "http" : "builtin"
+          }))
+        }
+      },
+      audit: {
+        enabled: this.platform.runtime?.auditEnabled ?? Boolean(this.platform.auditLogger)
+      }
+    };
+  }
+
+  async getPlatformDiagnostics(): Promise<PlatformPluginsDiagnostics> {
+    return {
+      plugins: await this.listPlatformPlugins(),
+      diagnostics: (this.platform.diagnostics ?? []).map(redactDiagnosticPaths)
+    };
   }
 
   async callTool(name: string, input: unknown): Promise<McpContent[]> {
@@ -530,9 +657,31 @@ export class WebMcpGateway {
     }
     return {
       ...plugin,
-      ...metadata
+      ...metadata,
+      pluginDir: metadata.pluginDir ? safePathSummary(metadata.pluginDir) : undefined
     };
   }
+
+  private async checkDatabaseHealth(): Promise<boolean> {
+    if (!(this.platform.runtime?.databaseConfigured ?? this.platform.runtime?.repositoryMode === "postgres")) {
+      return true;
+    }
+    try {
+      await this.repository.listSources();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private async safeListPlatformPlugins(): Promise<DecoratedPlugin[]> {
+    try {
+      return await this.listPlatformPlugins();
+    } catch {
+      return [];
+    }
+  }
+
 }
 
 interface JsonRpcRequest {
@@ -571,6 +720,30 @@ function isBodyMethod(method: string): boolean {
 
 function isRecord(input: unknown): input is Record<string, unknown> {
   return typeof input === "object" && input !== null && !Array.isArray(input);
+}
+
+function safePathSummary(value: string): string {
+  return value.replace(/\/+$/, "").split("/").filter(Boolean).slice(-2).join("/");
+}
+
+function redactDiagnosticPaths(diagnostic: LocalPluginDiagnostic): LocalPluginDiagnostic {
+  const pathReplacements = [
+    [diagnostic.pluginDir, diagnostic.pluginDir ? safePathSummary(diagnostic.pluginDir) : undefined],
+    [diagnostic.entryPath, diagnostic.entryPath ? safePathSummary(diagnostic.entryPath) : undefined],
+    [diagnostic.configPath, diagnostic.configPath ? safePathSummary(diagnostic.configPath) : undefined]
+  ].filter((entry): entry is [string, string] => Boolean(entry[0] && entry[1]));
+  return {
+    ...diagnostic,
+    pluginDir: diagnostic.pluginDir ? safePathSummary(diagnostic.pluginDir) : undefined,
+    entryPath: diagnostic.entryPath ? safePathSummary(diagnostic.entryPath) : undefined,
+    configPath: diagnostic.configPath ? safePathSummary(diagnostic.configPath) : undefined,
+    message: redactKnownPaths(diagnostic.message, pathReplacements),
+    details: undefined
+  };
+}
+
+function redactKnownPaths(value: string, replacements: Array<[string, string]>): string {
+  return replacements.reduce((current, [raw, safe]) => current.split(raw).join(safe), value);
 }
 
 function confirmationTokenFromInput(input: unknown): string | undefined {

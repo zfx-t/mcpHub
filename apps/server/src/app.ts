@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import { detectSource, detectSiteRequestSchema } from "@mcphub/core";
 import type { McpHubRepository } from "@mcphub/db";
-import { createSdkMcpServer } from "@mcphub/mcp";
+import { createSdkMcpServer, WebMcpGateway } from "@mcphub/mcp";
 import type { PlatformGatewayOptions } from "@mcphub/mcp";
 import type { ExtractionService } from "@mcphub/extractors";
 import type { ServerConfig } from "./config.js";
@@ -38,6 +38,16 @@ export function createApp(input: {
     version: "0.1.0"
   }));
 
+  app.get("/api/status", async () => {
+    const gateway = createRuntimeGateway(input);
+    return gateway.getStatusSummary();
+  });
+
+  app.get("/api/plugins", async () => {
+    const gateway = createRuntimeGateway(input);
+    return gateway.getPlatformDiagnostics();
+  });
+
   app.post("/api/detect-site", async (request, reply) => {
     const parsed = detectSiteRequestSchema.safeParse(request.body);
     if (!parsed.success) {
@@ -60,6 +70,14 @@ export function createApp(input: {
   });
 
   return app;
+}
+
+function createRuntimeGateway(input: {
+  repository: McpHubRepository;
+  extraction: ExtractionService;
+  platform?: PlatformGatewayOptions;
+}) {
+  return new WebMcpGateway(input.repository, input.extraction, input.platform);
 }
 
 function createRateLimiter(limitPerMinute: number) {
