@@ -699,4 +699,53 @@
   - 验证策略明确包含 `pnpm --filter @mcphub/web typecheck`、`pnpm --filter @mcphub/web build`、`pnpm lint`、`pnpm typecheck`、`pnpm build`、`git diff --check` 和浏览器响应式检查。
 - 下一步：
   - 已完成实施计划自检：计划文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围与设计文档一致；验收标准覆盖 workspace app、页面内容、响应式、构建、lint/typecheck、浏览器检查和构建产物排除；`git diff --check` 通过。
-  - 请求用户审阅实施计划；用户批准后进入代码实现。
+  - 用户已批准实施计划，进入代码实现。
+
+### 阶段 31：独立项目官网实现
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 按 `docs/superpowers/plans/2026-06-08-project-homepage-implementation-plan.md` 实现独立官网。
+  - 新增 `apps/web` workspace app：
+    - `apps/web/package.json`
+    - `apps/web/tsconfig.json`
+    - `apps/web/vite.config.ts`
+    - `apps/web/index.html`
+    - `apps/web/src/main.ts`
+    - `apps/web/src/styles.css`
+  - 页面实现内容：
+    - Hero 展示 MCPHub 定位、CTA、当前能力标签和深色 MCPHub flow panel。
+    - Platform positioning 解释“不是单插件 / 不替代原后台 / 面向 Agent 标准出口”。
+    - Core capabilities 展示本地插件加载、HTTP tool、executor、凭据策略、audit、插件标准、MCP endpoint 和 client CLI。
+    - Developer workflow 展示 `plugin:create`、`plugin:verify`、`MCPHUB_PLUGIN_DIR=... pnpm dev`、`mcp:client list-tools`。
+    - Plugin model 展示插件目录和最小 manifest 片段。
+    - Status and roadmap 诚实区分 available now、next 和 boundaries。
+    - Start here 提供 README、README_cn、插件开发指南、插件标准、fake-upload 示例链接。
+  - 渐进增强：
+    - 当前年份自动填充。
+    - hash 导航 active state。
+    - 命令和 manifest 片段 copy button，带成功/失败反馈。
+  - 更新 `README.md` 和 `README_cn.md`，新增独立官网运行和构建入口。
+- UI 修复：
+  - 首次桌面截图发现 hero 顶部留白过大，已取消 full viewport hero 并让下一节在首屏底部露出。
+  - 移动端普通 headless screenshot 因 Chrome 外部窗口和 CSS viewport 不一致产生裁切误判；通过 CDP 强制 375px viewport 验证真实 `scrollWidth == clientWidth`。
+  - 修复 `.hero.container` padding 覆盖问题，保留移动端左右 gutter。
+  - 修复 grid/panel/code 内容的 `min-width: 0` 和换行保护。
+- 验证：
+  - `pnpm --filter @mcphub/web typecheck` 通过。
+  - `pnpm --filter @mcphub/web build` 通过。
+  - `pnpm lint` 通过。
+  - `pnpm typecheck` 通过。
+  - `pnpm build` 通过。
+  - `git diff --check` 通过。
+  - Vite dev server 启动成功，实际地址为 `http://127.0.0.1:5173/`。
+  - `curl -fsS http://127.0.0.1:5173/` 返回 homepage HTML。
+  - CDP 375px viewport：`clientWidth=375`、`scrollWidth=375`、`bodyScrollWidth=375`。
+  - CDP 768px viewport：`clientWidth=753`、`scrollWidth=753`、`bodyScrollWidth=753`。
+  - CDP 1024px viewport：`clientWidth=1009`、`scrollWidth=1009`、`bodyScrollWidth=1009`。
+  - CDP 1440px viewport：`clientWidth=1425`、`scrollWidth=1425`、`bodyScrollWidth=1425`。
+  - 通过 screenshots 检查 375px 和 1440px：无横向滚动、无文本重叠、首屏信息清晰、深色面板可读、桌面首屏可见下一节提示。
+  - 临时 Vite dev server 和 headless Chrome CDP 会话已停止。
+- 下一步：
+  - 已检查 diff 和 ignored 文件，确认 `apps/web/dist` 与 `apps/web/node_modules` 未纳入提交范围。
+  - 准备提交实现。

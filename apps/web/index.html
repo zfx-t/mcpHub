@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="MCPHub 是一个可自托管的 MCP 中间件平台，用插件把已有网站、REST API 和自定义工作流转换为 Agent 可调用的 MCP resources 与 tools。"
+    />
+    <title>MCPHub - MCP middleware for existing APIs and workflows</title>
+  </head>
+  <body>
+    <header class="site-header">
+      <nav class="nav" aria-label="Primary navigation">
+        <a class="brand" href="#top" aria-label="MCPHub home">
+          <span class="brand-mark" aria-hidden="true">MH</span>
+          <span>MCPHub</span>
+        </a>
+        <div class="nav-links">
+          <a href="#positioning" data-nav-link>定位</a>
+          <a href="#capabilities" data-nav-link>能力</a>
+          <a href="#workflow" data-nav-link>流程</a>
+          <a href="#plugin-model" data-nav-link>插件模型</a>
+          <a href="#roadmap" data-nav-link>路线</a>
+        </div>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero container" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <span class="eyebrow"><span class="status-dot" aria-hidden="true"></span>v0.1 dev platform</span>
+          <h1 id="hero-title">MCPHub</h1>
+          <p class="hero-subtitle">
+            将没有 MCP 的网站、REST API、管理后台接口和本地工作流，转换成 Agent
+            可发现、可审计、可调用的 MCP resources 与 tools。
+          </p>
+          <div class="cta-row" aria-label="Primary actions">
+            <a class="button primary" href="https://github.com/zfx-t/mcpHub/blob/main/docs/plugins/development.md">
+              开始编写插件
+            </a>
+            <a class="button secondary" href="https://github.com/zfx-t/mcpHub/tree/main/examples/plugins/fake-upload">
+              查看示例插件
+            </a>
+          </div>
+          <div class="hero-proof" aria-label="Current platform highlights">
+            <span class="pill">Streamable HTTP MCP</span>
+            <span class="pill">Local plugins</span>
+            <span class="pill">Policy + audit</span>
+            <span class="pill">Generic MCP client</span>
+          </div>
+        </div>
+
+        <aside class="flow-panel" aria-label="MCPHub platform flow">
+          <div class="panel-topbar">
+            <span>adapter flow</span>
+            <span class="window-dots" aria-hidden="true"><span></span><span></span><span></span></span>
+          </div>
+          <div class="flow-grid">
+            <div class="flow-node">
+              <strong>REST API / Web / Local Plugin</strong>
+              <span>保留原系统，只通过插件描述能力和执行方式。</span>
+            </div>
+            <div class="flow-arrow" aria-hidden="true">down</div>
+            <div class="flow-node hub">
+              <strong>MCPHub</strong>
+              <span>加载插件，处理凭据、策略、审计、标准校验和诊断。</span>
+            </div>
+            <div class="flow-arrow" aria-hidden="true">down</div>
+            <div class="flow-node">
+              <strong>MCP Resources + Tools</strong>
+              <span>Agent 通过 `/mcp` 发现工具、读取资源并调用工作流。</span>
+            </div>
+          </div>
+          <div class="flow-footer" aria-label="Platform safeguards">
+            <span>credentials</span>
+            <span>policy</span>
+            <span>audit</span>
+          </div>
+        </aside>
+      </section>
+
+      <section id="positioning" class="section alt" aria-labelledby="positioning-title">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-kicker">Platform positioning</span>
+            <h2 id="positioning-title">它不是单个插件，而是把外部能力转成 MCP 的中间平台。</h2>
+            <p>
+              MCPHub 的目标接近 RSSHub 的扩展模型：运行一个统一服务，让开发者用插件把不同网站、
+              API 和工作流接入到稳定的 Agent 接口。
+            </p>
+          </div>
+          <div class="position-grid">
+            <article class="position-item">
+              <span class="label">01</span>
+              <h3>不是单一业务插件</h3>
+              <p>单个 B 站、后台或 SaaS 接入只是平台能力的样板，核心是可复制的插件标准。</p>
+            </article>
+            <article class="position-item">
+              <span class="label">02</span>
+              <h3>不替代原后台</h3>
+              <p>原系统继续使用自己的 API、权限和业务规则，MCPHub 只作为可信服务端适配层。</p>
+            </article>
+            <article class="position-item">
+              <span class="label">03</span>
+              <h3>面向 Agent 的标准出口</h3>
+              <p>插件能力最终暴露为 MCP resources 和 tools，让 Agent 能发现、理解和调用。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="capabilities" class="section" aria-labelledby="capabilities-title">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-kicker">Current capabilities</span>
+            <h2 id="capabilities-title">当前 dev 版本已经具备完整的接入闭环。</h2>
+            <p>从插件创建、加载、执行到 MCP client 验证，MCPHub 已经可以作为自托管开发版本使用。</p>
+          </div>
+          <div class="capability-grid">
+            <article class="capability">
+              <div class="capability-top"><h3>本地插件加载</h3><span class="capability-code">loader</span></div>
+              <p>通过 `MCPHUB_PLUGIN_DIR` 加载可信服务端 JavaScript 插件。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>HTTP API tools</h3><span class="capability-code">http</span></div>
+              <p>将一次 REST 请求映射成 Agent 可调用的 MCP tool。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>Executor workflows</h3><span class="capability-code">exec</span></div>
+              <p>用插件自定义 handler 执行多步骤上传、轮询、清洗和聚合。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>凭据与策略</h3><span class="capability-code">policy</span></div>
+              <p>从环境变量解析凭据，并区分 `read`、`write`、`dangerous` 效果。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>Audit evidence</h3><span class="capability-code">audit</span></div>
+              <p>记录工具调用、策略拦截和 executor checkpoint，便于审计和回滚。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>Plugin standard</h3><span class="capability-code">verify</span></div>
+              <p>通过插件标准、metadata 和 `plugin:verify` 提前发现接入问题。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>MCP endpoint</h3><span class="capability-code">/mcp</span></div>
+              <p>通过 Streamable HTTP 暴露 `resources/list`、`resources/read`、`tools/list`、`tools/call`。</p>
+            </article>
+            <article class="capability">
+              <div class="capability-top"><h3>Generic client CLI</h3><span class="capability-code">client</span></div>
+              <p>用 `pnpm mcp:client` 直接检查 endpoint、资源、工具和调用结果。</p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section id="workflow" class="section alt" aria-labelledby="workflow-title">
+        <div class="container workflow-grid">
+          <div>
+            <div class="section-header">
+              <span class="section-kicker">Developer workflow</span>
+              <h2 id="workflow-title">从一个 API 文档或后台能力开始，逐步变成 MCP tool。</h2>
+              <p>首版路径保持朴素：生成插件骨架，人工补齐业务细节，验证插件，再启动 MCPHub 给 Agent 使用。</p>
+            </div>
+            <div class="steps">
+              <article class="step">
+                <span class="step-number">1</span>
+                <div><h3>创建插件</h3><p>选择 HTTP API 或 executor 模板，生成可编辑的本地插件目录。</p></div>
+              </article>
+              <article class="step">
+                <span class="step-number">2</span>
+                <div><h3>验证插件</h3><p>运行标准校验，提前发现 manifest、config、凭据和 tool 声明问题。</p></div>
+              </article>
+              <article class="step">
+                <span class="step-number">3</span>
+                <div><h3>启动 MCPHub</h3><p>加载插件目录，平台负责策略、审计、诊断和 MCP 暴露。</p></div>
+              </article>
+              <article class="step">
+                <span class="step-number">4</span>
+                <div><h3>让 Agent 调用</h3><p>通过标准 MCP endpoint 发现工具并执行调用。</p></div>
+              </article>
+            </div>
+          </div>
+
+          <div class="code-panel">
+            <div class="code-header">
+              <span>terminal</span>
+              <button class="copy-button" type="button" data-copy-target="workflow-code">Copy</button>
+            </div>
+            <pre><code id="workflow-code">pnpm plugin:create my-admin --template http-api --tool-name admin.users.list
+pnpm plugin:verify examples/plugins/my-admin
+MCPHUB_PLUGIN_DIR=examples/plugins pnpm dev
+pnpm mcp:client --url http://127.0.0.1:3000/mcp list-tools</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="plugin-model" class="section" aria-labelledby="plugin-title">
+        <div class="container plugin-grid">
+          <div>
+            <div class="section-header">
+              <span class="section-kicker">Plugin model</span>
+              <h2 id="plugin-title">插件和平台解耦，复杂业务放在插件执行器里。</h2>
+              <p>
+                简单 REST 操作用声明式 `operation`，复杂上传、校验、提交和轮询用 `executor`。
+                平台只提供受控上下文和统一的 MCP 出口。
+              </p>
+            </div>
+            <div class="repo-panel">
+              <div class="tree" aria-label="Plugin directory tree">
+                <span>examples/plugins/my-plugin/</span>
+                <span>|-- index.js</span>
+                <span>|-- plugin.config.json</span>
+                <span>|-- README.md</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="code-panel">
+            <div class="code-header">
+              <span>index.js</span>
+              <button class="copy-button" type="button" data-copy-target="plugin-code">Copy</button>
+            </div>
+            <pre><code id="plugin-code">export default {
+  id: "admin-users",
+  version: "0.1.0",
+  type: "api",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy"]
+  },
+  tools: [{
+    name: "admin.users.list",
+    effect: "read",
+    operation: { type: "http", method: "GET", path: "/api/users" }
+  }]
+};</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section id="roadmap" class="section alt" aria-labelledby="roadmap-title">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-kicker">Status and roadmap</span>
+            <h2 id="roadmap-title">当前重点是把平台标准变得更可复制。</h2>
+            <p>v0.1/dev 已经跑通基础平台链路，下一步会降低 API 文档转 MCPHub 插件的成本。</p>
+          </div>
+          <div class="status-grid">
+            <article class="status-card">
+              <h3>Available now</h3>
+              <ul>
+                <li>Dev server and Docker smoke checks</li>
+                <li>Local plugin loading and verification</li>
+                <li>HTTP tools and executor workflow tools</li>
+                <li>MCP status, plugin diagnostics, audit resources</li>
+              </ul>
+            </article>
+            <article class="status-card next">
+              <h3>Next</h3>
+              <ul>
+                <li>OpenAPI/API docs to plugin generator</li>
+                <li>Richer plugin lifecycle diagnostics</li>
+                <li>Deployment hardening for public endpoints</li>
+                <li>More repeatable developer contribution standards</li>
+              </ul>
+            </article>
+            <article class="status-card">
+              <h3>Boundaries</h3>
+              <ul>
+                <li>No hosted cloud service is promised yet</li>
+                <li>No public plugin marketplace yet</li>
+                <li>No complete OpenAPI coverage yet</li>
+                <li>Local plugins are trusted server-side code</li>
+              </ul>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="links-title">
+        <div class="container">
+          <div class="section-header">
+            <span class="section-kicker">Start here</span>
+            <h2 id="links-title">从文档、标准和示例插件进入项目。</h2>
+          </div>
+          <div class="link-grid">
+            <a class="link-card" href="https://github.com/zfx-t/mcpHub/blob/main/README.md">
+              <strong>README</strong>
+              <p>项目能力、启动方式、MCP surface 和插件概览。</p>
+            </a>
+            <a class="link-card" href="https://github.com/zfx-t/mcpHub/blob/main/README_cn.md">
+              <strong>中文 README</strong>
+              <p>中文项目介绍、快速开始和验证命令。</p>
+            </a>
+            <a class="link-card" href="https://github.com/zfx-t/mcpHub/blob/main/docs/plugins/development.md">
+              <strong>插件开发指南</strong>
+              <p>从创建插件到本地加载和验证的教程路径。</p>
+            </a>
+            <a class="link-card" href="https://github.com/zfx-t/mcpHub/blob/main/docs/plugins/standard.md">
+              <strong>插件标准</strong>
+              <p>manifest、tool 命名、capability、effect 和错误约定。</p>
+            </a>
+            <a class="link-card" href="https://github.com/zfx-t/mcpHub/tree/main/examples/plugins/fake-upload">
+              <strong>fake-upload 示例</strong>
+              <p>executor workflow、dryRun 和 checkpoint audit 的可运行示例。</p>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-inner">
+        <p>MCPHub <span data-current-year>2026</span>. Self-hostable MCP middleware.</p>
+        <div class="footer-links">
+          <a href="https://github.com/zfx-t/mcpHub">GitHub</a>
+          <a href="#top">Back to top</a>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

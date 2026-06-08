@@ -59,6 +59,17 @@ pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect
 
 Generic client setup and troubleshooting are documented in [docs/clients/generic-mcp-client.md](docs/clients/generic-mcp-client.md).
 
+## Project Homepage
+
+MCPHub also includes an independent static homepage app for introducing the project and its developer workflow:
+
+```bash
+pnpm --filter @mcphub/web dev
+pnpm --filter @mcphub/web build
+```
+
+The homepage lives in `apps/web` and is separate from the MCP/API server in `apps/server`.
+
 ## Docker Dev Stack
 
 Start the Docker Compose stack with PostgreSQL and the built-in sample admin plugin enabled:

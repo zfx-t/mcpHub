@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 30：独立项目官网实施计划
+阶段 31：独立项目官网实现
 
 ## 各阶段
 
@@ -286,8 +286,20 @@
 - [x] 拆分 `apps/web` 脚手架、语义页面、CSS 设计系统、渐进增强、文档入口、验证、浏览器检查和提交阶段
 - [x] 写入 `docs/superpowers/plans/2026-06-08-project-homepage-implementation-plan.md`
 - [x] 实施计划自检并提交
-- [ ] 用户审阅实施计划后进入代码实现
-- **状态：** in_progress
+- [x] 用户审阅实施计划后进入代码实现
+- **状态：** complete
+
+### 阶段 31：独立项目官网实现
+- [x] Phase 0：基线与工作树保护
+- [x] Phase 1：创建 `apps/web` workspace app skeleton
+- [x] Phase 2：实现语义化主页内容
+- [x] Phase 3：实现视觉系统、响应式布局和可访问性 CSS
+- [x] Phase 4：实现轻量渐进增强
+- [x] Phase 5：更新 README / README_cn 入口
+- [x] Phase 6：运行自动化验证
+- [x] Phase 7：启动 Vite 并完成桌面/移动响应式浏览器检查
+- [x] Phase 8：提交实现并汇报
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？

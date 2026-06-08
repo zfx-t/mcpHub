@@ -127,6 +127,9 @@
 | 首页首版不需要 React | 页面主要是静态介绍、代码片段和内部链接；Vite + TypeScript + semantic HTML/CSS 足够，能降低依赖、构建和审计成本 |
 | 独立官网会被根 workspace 构建纳入验证 | `pnpm-workspace.yaml` 已包含 `apps/*`，新建 `apps/web` 后根 `pnpm build` 和 `pnpm typecheck` 会覆盖该 app；实施计划必须验证 root build，避免新增官网破坏 monorepo 构建 |
 | 官网构建产物不应提交 | `.gitignore` 已包含 `dist/` 和 `**/*.tsbuildinfo`，实施时需要确认 `apps/web/dist` 与 tsbuildinfo 未被 staged |
+| 独立官网 hero 不应占满整个视口 | 初次桌面截图显示 full viewport hero 顶部留白过大；改为内容驱动高度并让下一节在首屏底部露出，信息密度和 landing page 质量更好 |
+| 同一元素同时作为 `.hero.container` 时要避免 padding 覆盖 | `.hero { padding: ... }` 会覆盖 `.container` 的左右 gutter，导致移动端贴边；应使用 `padding-block` 保留横向 padding |
+| Headless Chrome `--window-size` 不等于 CSS viewport 验证 | 普通 screenshot 可能因外部窗口尺寸造成裁切误判；需要用 CDP `Emulation.setDeviceMetricsOverride` 检查真实 `clientWidth` / `scrollWidth` |
 
 ## 平台化演进草案
 

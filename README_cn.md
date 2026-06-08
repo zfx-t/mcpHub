@@ -57,6 +57,17 @@ pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect
 
 通用客户端接入和排错说明见 [docs/clients/generic-mcp-client.md](docs/clients/generic-mcp-client.md)。
 
+## 项目主页
+
+MCPHub 也包含一个独立的静态官网应用，用来介绍项目定位和开发者接入流程：
+
+```bash
+pnpm --filter @mcphub/web dev
+pnpm --filter @mcphub/web build
+```
+
+该主页位于 `apps/web`，与 `apps/server` 中的 MCP/API 服务解耦。
+
 ## Docker 开发栈
 
 启动带 PostgreSQL 和内置 sample admin plugin 的 Docker Compose 服务：
