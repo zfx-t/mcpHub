@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 31：独立项目官网实现
+阶段 32：项目官网文档门户重设计
 
 ## 各阶段
 
@@ -300,6 +300,16 @@
 - [x] Phase 7：启动 Vite 并完成桌面/移动响应式浏览器检查
 - [x] Phase 8：提交实现并汇报
 - **状态：** complete
+
+### 阶段 32：项目官网文档门户重设计
+- [x] 恢复当前 `apps/web` 页面、README、已有官网设计文档和规划上下文
+- [x] 分析用户反馈：当前页面缺少文档中心、关于、项目介绍和明确的接口说明，视觉也不够像成熟开源项目门户
+- [x] 确认重设计方向：从 developer landing page 改成 open-source project portal / documentation homepage
+- [x] 明确新版信息架构：Hero、About、Docs、Architecture、Quick Start、MCP Surface、Plugin System、Progress/Roadmap、Footer
+- [x] 写入 `docs/superpowers/specs/2026-06-08-project-docs-portal-redesign.md`
+- [x] 设计文档自检并提交
+- [ ] 用户审阅设计文档后进入实施计划
+- **状态：** in_progress
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？

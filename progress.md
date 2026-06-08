@@ -749,3 +749,18 @@
 - 下一步：
   - 已检查 diff 和 ignored 文件，确认 `apps/web/dist` 与 `apps/web/node_modules` 未纳入提交范围。
   - 准备提交实现。
+
+### 阶段 32：项目官网文档门户重设计
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户反馈当前前端效果不好，缺少文档、关于、项目介绍，视觉也不够成熟。
+  - 已恢复当前分支、现有 `apps/web` 页面、README/README_cn、官网设计文档和规划上下文。
+  - 判断问题核心是信息架构不足：旧页面偏 developer landing，无法承担开源项目首页、文档入口、接口说明和项目介绍的职责。
+  - 确认重设计方向：将 `apps/web` 从稀薄 landing page 改成 open-source project portal / documentation homepage。
+  - 新版设计要求包含：Hero、About、Documentation Center、Architecture、Quick Start、MCP Surface、Plugin System、Current Progress/Roadmap 和 Footer。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-08-project-docs-portal-redesign.md`。
+- 下一步：
+  - 设计文档自检通过：新文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确限制在 `apps/web` 静态官网，不修改 MCP server runtime、插件 loader、package API 或 GitHub Pages workflow；`git diff --check` 通过。
+  - 提交设计文档和规划文件。
+  - 请求用户审阅设计文档；通过后再写实施计划并进入 `apps/web` 代码重构。

@@ -130,6 +130,9 @@
 | 独立官网 hero 不应占满整个视口 | 初次桌面截图显示 full viewport hero 顶部留白过大；改为内容驱动高度并让下一节在首屏底部露出，信息密度和 landing page 质量更好 |
 | 同一元素同时作为 `.hero.container` 时要避免 padding 覆盖 | `.hero { padding: ... }` 会覆盖 `.container` 的左右 gutter，导致移动端贴边；应使用 `padding-block` 保留横向 padding |
 | Headless Chrome `--window-size` 不等于 CSS viewport 验证 | 普通 screenshot 可能因外部窗口尺寸造成裁切误判；需要用 CDP `Emulation.setDeviceMetricsOverride` 检查真实 `clientWidth` / `scrollWidth` |
+| 当前官网需要从 landing page 重设计为文档门户 | 用户明确反馈现有前端“没有文档、没有关于、没有项目介绍、很丑”；问题核心是信息架构不足，不只是视觉细节 |
+| 新官网应强化项目解释和接口面 | 首页需要显式展示 About、Documentation Center、Architecture、Quick Start、MCP Surface、Plugin System 和 Roadmap，让新开发者不用先翻 README 才理解项目 |
+| 官网重设计不应影响 MCP runtime | 当前问题集中在 `apps/web` 的展示和导航；实现范围应限制在静态官网，不修改 `apps/server`、插件 loader、MCP gateway 或 GitHub Pages workflow |
 
 ## 平台化演进草案
 
