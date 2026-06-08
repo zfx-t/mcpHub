@@ -530,3 +530,21 @@
 
 ---
 *每个阶段完成后或遇到错误时更新此文件*
+
+### 阶段 23：v0.1.0 后续路线规划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 11:00:29 CST
+- 执行的操作：
+  - 用户要求继续规划后面的工作，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已恢复当前 Git 状态、近期提交、`task_plan.md`、`progress.md`、`findings.md`、`package.json`、最新设计文档、插件开发文档和 dev 部署文档。
+  - 当前分支 `develope` 与 `origin/develope` 对齐，工作树只有本轮规划文件改动。
+  - 当前项目已经完成 `v0.1.0` dev release：具备 Streamable HTTP MCP endpoint、本地插件加载、HTTP API tool、executor workflow、环境变量凭据、策略、audit、插件 CLI、示例插件、诊断 API、MCP status resource、本地/Docker smoke 和双语 README。
+  - 初步判断：下一阶段不应继续增加单一业务插件，而应围绕 MCPHub 作为 RSSHub 式中间平台的“标准化、可接入、可运营、可扩展”能力选择一个主线。
+- 下一步：
+  - 用户选择先实现 D：MCP 客户端接入体验，让 Agent 能实际接入 MCPHub；后续再做 A：平台标准化和开发者体验强化。
+  - 下一步确认第一批目标 MCP client / Agent，再提出 2-3 种接入体验路线和推荐方案。
+  - 用户确认第一批采用 C：通用 MCP client，不绑定 Claude/Cursor 等具体产品。
+  - 已提出三种路线：curl 文档包、通用 MCP client CLI、通用接入包 + 最小 Agent 示例；用户确认采用方案 2：通用 MCP client CLI。
+  - 已重新读取 `brainstorming` 和 `planning-with-files-zh` 技能说明，确认当前仍处于设计门槛内，不能直接进入代码实现。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-08-generic-mcp-client-design.md`。
+  - 完成设计文档自检：无 TBD/TODO/FIXME/占位符；范围明确排除具体产品客户端配置、完整 Agent 框架、认证/OAuth、持久 session、stdio transport 和独立 npm 包发布；`git diff --check` 通过。

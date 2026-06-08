@@ -110,6 +110,10 @@
 | 用户本地生成插件目录需保留 | 当前 `examples/plugins/my-admin/` 和 `examples/plugins/my-workflow/` 是未跟踪目录，推断为用户按教程生成的实验插件；后续规划和提交应避免误清理或纳入 |
 | 阶段 20 应对齐 RSSHub 式平台，不继续做业务插件优化 | 用户明确指出目标是类似 RSSHub 的中间平台/标准软件项目：可部署、可使用、开发者按标准自行扩展 route/plugin，把没有 MCP 的能力转换为 MCP |
 | dev 版本缺口在产品化闭环而非插件表达能力 | 当前已有 MCP endpoint、插件加载、HTTP/executor tool、凭据、策略、审计、Docker 和 CLI；下一步更应补稳定配置、部署文档、健康检查/诊断、版本契约、验收脚本和实例运维可见性 |
+| v0.1.0 后续首要方向确定为通用 MCP client 接入体验 | 用户选择先做 C：通用 MCP client，不绑定 Claude/Cursor 等具体产品，先让 Agent 能基于标准 Streamable HTTP 实际接入 MCPHub |
+| 官方 MCP Streamable HTTP 要求单一 MCP endpoint | 官方 2025-06-18 transport 文档要求 Streamable HTTP server 提供单一 MCP endpoint，例如 `/mcp`，并通过 POST 发送 JSON-RPC；MCPHub 当前 Fastify `/mcp` 与该方向一致 |
+| 通用 MCP client 应覆盖初始化生命周期 | 官方 lifecycle 文档要求 `initialize` 是首个交互，客户端随后发送 `notifications/initialized`，并在后续请求中尊重协商协议版本；当前 smoke 只做 initialize 和后续请求，下一阶段可补标准 client 流程 |
+| 通用接入体验缺口在 client-facing 工具而非 server endpoint | 当前 `scripts/smoke-helpers.ts` 可直接 POST JSON-RPC 验证 `/mcp`，但它是测试辅助，不是面向用户的通用 MCP client、连接诊断或可复用示例 |
 
 ## 平台化演进草案
 
