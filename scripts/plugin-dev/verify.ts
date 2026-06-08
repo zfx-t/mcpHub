@@ -30,6 +30,7 @@ export async function verifyPlugin(pluginDirInput: string): Promise<VerifyPlugin
     ? result.manifests.find((manifest) => manifest.id === loadedDiagnostic.pluginId)
     : undefined;
   if (targetManifest) {
+    const standard = loadedDiagnostic.standard ?? { compatible: true, warnings: 0, errors: 0 };
     return {
       status: "passed",
       pluginName: targetManifest.id,
@@ -37,6 +38,9 @@ export async function verifyPlugin(pluginDirInput: string): Promise<VerifyPlugin
       lines: [
         "Plugin verification passed",
         `Plugin: ${targetManifest.id}`,
+        `Standard: ${standard.compatible ? "compatible" : "incompatible"}`,
+        `Warnings: ${standard.warnings}`,
+        `Errors: ${standard.errors}`,
         "Tools:",
         ...targetManifest.tools.map((tool) => `- ${tool.name} (${tool.effect}, ${toolMode(tool)})`)
       ]
@@ -70,7 +74,10 @@ function diagnosticsForTarget(result: LocalPluginLoadResult, pluginDir: string, 
 
 function formatDiagnostic(diagnostic: LocalPluginDiagnostic): string {
   const target = diagnostic.toolName ? ` ${diagnostic.toolName}` : diagnostic.pluginId ? ` ${diagnostic.pluginId}` : "";
-  return `- [${diagnostic.severity}] ${diagnostic.code}${target}: ${diagnostic.message}`;
+  const standardCode = diagnostic.standardDiagnostic?.code ? ` standard=${diagnostic.standardDiagnostic.code}` : "";
+  const pathText = diagnostic.standardDiagnostic?.path ? ` path=${diagnostic.standardDiagnostic.path}` : "";
+  const suggestionText = diagnostic.standardDiagnostic?.suggestion ? ` suggestion=${diagnostic.standardDiagnostic.suggestion}` : "";
+  return `- [${diagnostic.severity}] ${diagnostic.code}${target}${standardCode}${pathText}: ${diagnostic.message}${suggestionText}`;
 }
 
 async function assertRequiredFile(targetPath: string, expected: "directory" | "file"): Promise<void> {

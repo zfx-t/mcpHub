@@ -113,7 +113,62 @@ describe("loadLocalPlugins", () => {
     expect(result.diagnostics).toEqual([
       expect.objectContaining({
         code: "loaded_plugin",
-        pluginId: "admin-users-local"
+        pluginId: "admin-users-local",
+        standard: expect.objectContaining({ compatible: true, warnings: 0, errors: 0 })
+      })
+    ]);
+  });
+
+  it("loads legacy plugins without standard metadata and emits a warning", async () => {
+    const pluginDir = await createTempPluginDir();
+    await writeLocalPlugin(pluginDir, "legacy-plugin", {
+      entry: pluginModule({ id: "legacy-plugin", toolName: "legacy.items.list", mcphub: null }),
+      config: {
+        enabled: true,
+        config: {},
+        credentials: {}
+      } satisfies LocalPluginConfigInput
+    });
+
+    const result = await loadLocalPlugins({ pluginDir });
+
+    expect(result.manifests.map((manifest) => manifest.id)).toEqual(["legacy-plugin"]);
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "standard_validation_warning",
+        pluginId: "legacy-plugin"
+      }),
+      expect.objectContaining({
+        code: "loaded_plugin",
+        pluginId: "legacy-plugin",
+        standard: expect.objectContaining({ compatible: true, warnings: 1, errors: 0 })
+      })
+    ]);
+  });
+
+  it("skips plugins that require unsupported standard capabilities", async () => {
+    const pluginDir = await createTempPluginDir();
+    await writeLocalPlugin(pluginDir, "future-plugin", {
+      entry: pluginModule({
+        id: "future-plugin",
+        toolName: "future.jobs.run",
+        mcphub: { minVersion: "0.1.0", capabilities: ["future-runtime"] }
+      }),
+      config: {
+        enabled: true,
+        config: {},
+        credentials: {}
+      } satisfies LocalPluginConfigInput
+    });
+
+    const result = await loadLocalPlugins({ pluginDir });
+
+    expect(result.manifests).toEqual([]);
+    expect(result.diagnostics).toEqual([
+      expect.objectContaining({
+        code: "standard_validation_error",
+        pluginId: "future-plugin",
+        standardDiagnostic: expect.objectContaining({ code: "PLUGIN_COMPATIBILITY_ERROR" })
       })
     ]);
   });
@@ -375,6 +430,7 @@ ${pluginModule({ id: "disabled-plugin", toolName: "admin.users.disabledtool" })}
         code: "disabled_plugin"
       })
     ]);
+    expect(result.diagnostics.find((diagnostic) => diagnostic.code === "standard_validation_warning")).toBeUndefined();
     await expect(access(sideEffectPath)).rejects.toThrow();
   });
 });
@@ -401,7 +457,7 @@ async function writeLocalPlugin(
   }
 }
 
-function pluginModule(input: { id: string; toolName: string; credentialId?: string }) {
+function pluginModule(input: { id: string; toolName: string; credentialId?: string; mcphub?: Record<string, unknown> | null }) {
   const credentials = input.credentialId
     ? [{ id: input.credentialId, type: "bearer" }]
     : [];
@@ -413,6 +469,14 @@ function pluginModule(input: { id: string; toolName: string; credentialId?: stri
       version: "0.1.0",
       type: "api",
       description: `${input.id} plugin`,
+      ...(input.mcphub === null
+        ? {}
+        : {
+            mcphub: input.mcphub ?? {
+              minVersion: "0.1.0",
+              capabilities: ["http", "credentials", "policy", "plugin-config"]
+            }
+          }),
       credentials,
       tools: [
         {
@@ -448,6 +512,10 @@ function executorPluginModule(input: {
   version: "0.1.0",
   type: "custom",
   description: ${JSON.stringify(`${input.id} plugin`)},
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["executor", "policy", "checkpoint"]
+  },
   tools: [
     {
       name: ${JSON.stringify(input.toolName)},
