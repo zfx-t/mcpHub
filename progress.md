@@ -630,5 +630,17 @@
     - `pnpm vitest run scripts/plugin-cli.test.ts packages/core/src/core.test.ts packages/plugins/src/local-loader.test.ts packages/mcp/src/gateway.test.ts apps/server/src/app.test.ts` 通过，5 个测试文件、67 个测试。
     - `pnpm typecheck` 通过。
 - 下一步：
-  - 进行代码质量自查，补遗漏测试或文档矛盾。
-  - 运行全量验证：`pnpm lint`、`pnpm test`、`pnpm test:e2e`、`pnpm test:plugin`、`pnpm build`、`git diff --check`。
+  - 代码质量自查已完成：修复文档旧 tool name、README 示例 metadata、gateway 测试 matcher 和 smoke fixture legacy warning 噪声。
+  - 全量验证通过：
+    - `pnpm typecheck` 通过。
+    - `pnpm lint` 通过。
+    - `pnpm test` 通过，15 个测试文件、124 个测试。
+    - `pnpm test:e2e` 通过。
+    - `pnpm test:plugin` 通过。
+    - `pnpm build` 通过。
+    - `git diff --check` 通过。
+  - 已按功能拆分提交：
+    - `55b17d9 Add plugin standard validation`
+    - `0c7af4c Enforce plugin standard in local verification`
+    - `59beba2 Expose plugin standard diagnostics`
+  - 阶段 27 完成。
