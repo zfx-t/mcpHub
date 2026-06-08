@@ -114,6 +114,10 @@
 | 官方 MCP Streamable HTTP 要求单一 MCP endpoint | 官方 2025-06-18 transport 文档要求 Streamable HTTP server 提供单一 MCP endpoint，例如 `/mcp`，并通过 POST 发送 JSON-RPC；MCPHub 当前 Fastify `/mcp` 与该方向一致 |
 | 通用 MCP client 应覆盖初始化生命周期 | 官方 lifecycle 文档要求 `initialize` 是首个交互，客户端随后发送 `notifications/initialized`，并在后续请求中尊重协商协议版本；当前 smoke 只做 initialize 和后续请求，下一阶段可补标准 client 流程 |
 | 通用接入体验缺口在 client-facing 工具而非 server endpoint | 当前 `scripts/smoke-helpers.ts` 可直接 POST JSON-RPC 验证 `/mcp`，但它是测试辅助，不是面向用户的通用 MCP client、连接诊断或可复用示例 |
+| 通用 MCP client CLI 已补齐 Agent 接入验证入口 | `pnpm mcp:client` 已能通过真实 Streamable HTTP `/mcp` 执行 initialize、资源/工具列表、资源读取和工具调用；下一阶段瓶颈从“能不能接入”转向“怎样规模化开发、部署和治理插件” |
+| 下一阶段应避免继续堆业务插件 | 用户长期目标是 RSSHub 式中间平台；除非作为验证样板，否则单一 B 站/后台业务插件不是主线，主线应是平台标准、可复制接入流程、上线安全或生命周期诊断 |
+| 阶段 26 方向确认：平台标准化 | 用户确认采用方案 A；下一阶段应围绕插件 manifest、tool/resource 命名、错误码、兼容性、文档模板和验证清单建立 MCPHub 开发标准 |
+| 平台标准化设计已落盘为草案 | `docs/superpowers/specs/2026-06-08-platform-standardization-design.md` 定义先文档化、再共享校验、再增强 `plugin:verify`、再对齐 `/api/plugins` 和 `mcphub://status` 的增量标准化路线 |
 
 ## 平台化演进草案
 

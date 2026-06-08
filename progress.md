@@ -587,3 +587,21 @@
   - `pnpm build` 通过。
   - `git diff --check` 通过。
   - 运行中服务验证通过：`inspect`、`list-tools`、`read-resource --uri mcphub://status`、`call-tool --name source.search --args '{}'` 均通过。
+
+### 阶段 26：v0.1.0 后续路线规划二期
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求继续规划接下来做什么，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已恢复当前 Git 状态、近期提交、`task_plan.md`、`progress.md`、`findings.md` 和项目文件清单。
+  - 当前分支 `develope` 比 `origin/develope` 领先 3 个提交：通用 MCP client 设计、实施计划和实现提交尚未推送。
+  - 当前阶段前置能力已完成：v0.1.0 dev release、插件加载、HTTP/executor tool、凭据、策略、audit、开发者 CLI、诊断 API、本地/Docker smoke、双语 README 和通用 MCP client CLI。
+  - 初步判断：通用 client 已解决“Agent 如何实际连接和检查 MCPHub”的第一层问题；下一阶段应围绕 MCPHub 作为 RSSHub 式中间平台的可复用标准、真实接入样板、部署安全或插件生命周期可观测性选择一个主线。
+- 下一步：
+  - 按 brainstorming 流程先向用户确认下一阶段优先方向，再写设计文档；在用户批准设计前不进入代码实现。
+  - 用户确认采用方案 A：平台标准化。
+  - 下一步呈现平台标准化设计草案，确认范围后写入设计文档。
+  - 已写入设计文档草案 `docs/superpowers/specs/2026-06-08-platform-standardization-design.md`。
+  - 设计覆盖插件标准文档、manifest 标准、tool/resource 命名、input/output、错误码、兼容性模型、`plugin:verify` 增强、平台诊断、数据流、测试和验收标准。
+  - 设计文档自检通过：未发现 TBD/TODO/FIXME/占位符；范围明确排除远程插件市场、插件发布签名、OpenAPI 导入、浏览器自动化、多租户权限、生产级 MCP 鉴权和 runtime 重写；`git diff --check` 通过。
+  - 下一步提交设计文档与规划文件，并请求用户审阅。
