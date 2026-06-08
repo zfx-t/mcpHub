@@ -605,3 +605,9 @@
   - 设计覆盖插件标准文档、manifest 标准、tool/resource 命名、input/output、错误码、兼容性模型、`plugin:verify` 增强、平台诊断、数据流、测试和验收标准。
   - 设计文档自检通过：未发现 TBD/TODO/FIXME/占位符；范围明确排除远程插件市场、插件发布签名、OpenAPI 导入、浏览器自动化、多租户权限、生产级 MCP 鉴权和 runtime 重写；`git diff --check` 通过。
   - 下一步提交设计文档与规划文件，并请求用户审阅。
+  - 设计提交：`e7a3e0b Design platform standardization`。
+  - 用户确认设计，要求开始编写实施计划。
+  - 已写入实施计划草案 `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-9：基线、标准文档、core 标准类型与校验、local loader 诊断、`plugin:verify` 标准门禁、平台诊断、模板和样例对齐、自动化测试、最终验证、提交策略。
+  - 实施计划自检通过：未发现 TBD/TODO/FIXME/占位符；范围与设计一致，明确排除插件市场、签名、OpenAPI 导入、浏览器自动化、多租户权限、生产 MCP 鉴权和 runtime 重写；`git diff --check` 通过。
+  - 下一步提交实施计划与规划文件，并请求用户审阅。

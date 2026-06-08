@@ -118,6 +118,7 @@
 | 下一阶段应避免继续堆业务插件 | 用户长期目标是 RSSHub 式中间平台；除非作为验证样板，否则单一 B 站/后台业务插件不是主线，主线应是平台标准、可复制接入流程、上线安全或生命周期诊断 |
 | 阶段 26 方向确认：平台标准化 | 用户确认采用方案 A；下一阶段应围绕插件 manifest、tool/resource 命名、错误码、兼容性、文档模板和验证清单建立 MCPHub 开发标准 |
 | 平台标准化设计已落盘为草案 | `docs/superpowers/specs/2026-06-08-platform-standardization-design.md` 定义先文档化、再共享校验、再增强 `plugin:verify`、再对齐 `/api/plugins` 和 `mcphub://status` 的增量标准化路线 |
+| 平台标准化实施计划已落盘为草案 | `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md` 将实现拆为标准文档、共享校验、loader/verifier/diagnostics 集成、模板对齐、测试和最终验证 |
 
 ## 平台化演进草案
 
