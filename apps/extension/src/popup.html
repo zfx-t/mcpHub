@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MCPHub Detector</title>
+    <script type="module" src="./popup.ts"></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="header">
+        <div>
+          <h1>MCPHub</h1>
+          <p id="host">Current site</p>
+        </div>
+        <span id="statusBadge" class="badge neutral">idle</span>
+      </header>
+
+      <section class="config">
+        <label for="serverUrl">Server</label>
+        <div class="server-row">
+          <input id="serverUrl" type="url" autocomplete="off" />
+          <button id="saveServer" type="button" title="Save server URL">Save</button>
+        </div>
+      </section>
+
+      <section class="result">
+        <h2 id="sourceName">No result</h2>
+        <p id="message">Run detection for the current tab.</p>
+        <pre id="details"></pre>
+      </section>
+
+      <footer class="actions">
+        <button id="detect" type="button">Detect</button>
+        <button id="copy" type="button" disabled>Copy URI</button>
+      </footer>
+    </main>
+  </body>
+</html>

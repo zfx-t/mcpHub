@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "strict": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "@mcphub/core": ["packages/core/src/index.ts"],
+      "@mcphub/api-connector": ["packages/api-connector/src/index.ts"],
+      "@mcphub/audit": ["packages/audit/src/index.ts"],
+      "@mcphub/credentials": ["packages/credentials/src/index.ts"],
+      "@mcphub/db": ["packages/db/src/index.ts"],
+      "@mcphub/extractors": ["packages/extractors/src/index.ts"],
+      "@mcphub/plugins": ["packages/plugins/src/index.ts"],
+      "@mcphub/plugins/local-loader": ["packages/plugins/src/local-loader.ts"],
+      "@mcphub/policy": ["packages/policy/src/index.ts"],
+      "@mcphub/mcp": ["packages/mcp/src/index.ts"]
+    },
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  }
+}
