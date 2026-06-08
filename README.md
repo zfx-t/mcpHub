@@ -1,57 +1,57 @@
 # MCPHub
 
-MCPHub is a self-hostable middleware platform for turning existing web content, REST APIs, admin backends, and trusted local integration code into MCP resources and tools.
+MCPHub 是一个可自托管的中间件平台，用来把已有网页内容、REST API、管理后台接口以及可信本地集成代码转换为 MCP resources 和 tools。
 
-The project is inspired by the RSSHub style of extensibility: run one service, add local adapters/plugins, and expose a consistent interface to clients. MCPHub focuses on MCP-native output for AI agents rather than RSS feeds.
+这个项目的扩展思路类似 RSSHub：运行一个统一服务，开发者按需添加本地适配器或插件，再向客户端暴露一致的接口。不同的是，MCPHub 面向 AI Agent 输出 MCP 原生能力，而不是 RSS feed。
 
-## What It Does
+## 当前能做什么
 
-- Exposes a Streamable HTTP MCP endpoint at `/mcp`.
-- Converts web content sources into MCP-readable resources and tools.
-- Loads trusted local plugins from `MCPHUB_PLUGIN_DIR`.
-- Supports declarative HTTP tools for one-request REST operations.
-- Supports executor tools for multi-step workflows implemented in plugin code.
-- Resolves credentials from environment variables.
-- Applies tool policy for `read`, `write`, and `dangerous` effects.
-- Records audit evidence for plugin tool calls.
-- Provides runtime status and plugin diagnostics for operators.
+- 在 `/mcp` 暴露 Streamable HTTP MCP endpoint。
+- 将网页内容源转换为 MCP 可读取的资源和工具。
+- 从 `MCPHUB_PLUGIN_DIR` 加载可信本地插件。
+- 支持声明式 HTTP tool，用于一次请求即可完成的 REST API 操作。
+- 支持 executor tool，用插件代码实现多步骤工作流。
+- 从环境变量解析凭据。
+- 基于 `read`、`write`、`dangerous` 执行工具策略。
+- 为插件工具调用记录 audit 证据。
+- 提供运行状态和插件诊断接口，方便部署和排查。
 
-## Requirements
+## 环境要求
 
-- Node.js 25 or newer
+- Node.js 25 或更新版本
 - pnpm 10
-- Docker, for PostgreSQL and Docker Compose verification
+- Docker，用于 PostgreSQL 和 Docker Compose 验证
 
-## Quick Start
+## 快速开始
 
-Install dependencies and run the local in-memory server:
+安装依赖并启动本地内存模式服务：
 
 ```bash
 pnpm install
 REQUEST_LOGGING=false pnpm dev
 ```
 
-In another terminal, verify the running instance:
+另开一个终端验证服务：
 
 ```bash
 pnpm dev:smoke
 ```
 
-The server starts at:
+服务默认地址：
 
 ```text
 http://localhost:3000
 ```
 
-The MCP endpoint is:
+MCP endpoint：
 
 ```text
 http://localhost:3000/mcp
 ```
 
-## Docker Dev Stack
+## Docker 开发栈
 
-Start the Docker Compose stack with PostgreSQL and the built-in sample admin plugin enabled:
+启动带 PostgreSQL 和内置 sample admin plugin 的 Docker Compose 服务：
 
 ```bash
 SAMPLE_ADMIN_API_BASE_URL=http://host.docker.internal:4001 \
@@ -59,37 +59,37 @@ SAMPLE_ADMIN_API_TOKEN=dev-token \
 docker compose up --build -d server
 ```
 
-Verify the running Docker instance:
+验证 Docker 服务：
 
 ```bash
 pnpm docker:smoke
 ```
 
-`docker:smoke` checks server liveness, PostgreSQL mode, MCP discovery, plugin tool visibility, and blocked dangerous-call audit evidence.
+`docker:smoke` 会检查服务存活、PostgreSQL 模式、MCP 发现、插件工具可见性，以及危险调用被拦截后的 audit 证据。
 
-Detailed deployment instructions are in [docs/deployment/dev.md](docs/deployment/dev.md).
+更完整的部署说明见 [docs/deployment/dev.md](docs/deployment/dev.md)。
 
-## Operator Diagnostics
+## 运维诊断
 
-Health:
+健康检查：
 
 ```bash
 curl http://localhost:3000/healthz
 ```
 
-Runtime status:
+运行状态：
 
 ```bash
 curl http://localhost:3000/api/status
 ```
 
-Plugin diagnostics:
+插件诊断：
 
 ```bash
 curl http://localhost:3000/api/plugins
 ```
 
-Agent-readable status is also available through MCP:
+也可以通过 MCP 读取 Agent 可理解的状态资源：
 
 ```bash
 curl -X POST http://localhost:3000/mcp \
@@ -98,11 +98,11 @@ curl -X POST http://localhost:3000/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"resources/read","params":{"uri":"mcphub://status"}}'
 ```
 
-More troubleshooting notes are in [docs/operations/diagnostics.md](docs/operations/diagnostics.md).
+更多排查说明见 [docs/operations/diagnostics.md](docs/operations/diagnostics.md)。
 
-## MCP Surface
+## MCP 接口面
 
-Supported JSON-RPC MCP methods:
+当前支持的 JSON-RPC MCP 方法：
 
 - `initialize`
 - `resources/list`
@@ -110,7 +110,7 @@ Supported JSON-RPC MCP methods:
 - `tools/list`
 - `tools/call`
 
-Platform resources:
+平台资源：
 
 - `mcphub://status`
 - `mcphub://plugins`
@@ -118,7 +118,7 @@ Platform resources:
 - `mcphub://plugins/{pluginId}/tools`
 - `mcphub://audit/recent`
 
-Web content resources:
+网页内容资源：
 
 - `webmcp://sources`
 - `webmcp://sources/{sourceId}`
@@ -126,18 +126,18 @@ Web content resources:
 - `webmcp://items/{itemId}`
 - `webmcp://rules/{ruleId}/diagnostics`
 
-Built-in web tools:
+内置网页工具：
 
 - `source.search`
 - `source.refresh`
 - `extract.preview`
 - `debug.explain`
 
-Plugin tools appear in `tools/list` when their plugins are loaded and enabled.
+当插件被正确加载且启用后，插件工具会出现在 `tools/list` 结果中。
 
-## Local Plugins
+## 本地插件
 
-Local plugins are trusted server-side JavaScript modules. Each plugin directory contains:
+本地插件是可信的服务端 JavaScript 模块。每个插件目录包含：
 
 ```text
 plugins/
@@ -146,29 +146,29 @@ plugins/
     plugin.config.json
 ```
 
-Start MCPHub with a plugin directory:
+使用插件目录启动 MCPHub：
 
 ```bash
 MCPHUB_PLUGIN_DIR=/absolute/path/to/plugins pnpm dev
 ```
 
-Create a plugin skeleton:
+创建插件骨架：
 
 ```bash
 pnpm plugin:create my-admin --template http-api --tool-name my.admin.users.list
 pnpm plugin:verify examples/plugins/my-admin
 ```
 
-Use the executor template for multi-step workflow tools:
+创建多步骤工作流插件骨架：
 
 ```bash
 pnpm plugin:create my-workflow --template executor --tool-name my.workflow.run
 pnpm plugin:verify examples/plugins/my-workflow
 ```
 
-The full plugin authoring guide is in [docs/plugins/development.md](docs/plugins/development.md).
+完整插件开发指南见 [docs/plugins/development.md](docs/plugins/development.md)。
 
-## HTTP API Plugin Example
+## HTTP API 插件示例
 
 ```js
 export default {
@@ -194,7 +194,7 @@ export default {
 };
 ```
 
-Example `plugin.config.json`:
+示例 `plugin.config.json`：
 
 ```json
 {
@@ -214,17 +214,17 @@ Example `plugin.config.json`:
 }
 ```
 
-## Executor Plugins
+## Executor 插件
 
-Executor tools are for workflows where one MCP call needs plugin-owned code, such as validation, multiple API calls, uploads, polling, and result normalization.
+Executor tool 适合一个 MCP 调用需要插件自有代码完成的场景，例如参数校验、多次 API 调用、上传、轮询、结果归一化等。
 
-An executor tool declares:
+一个 executor tool 会声明：
 
 ```js
 executor: { type: "module", handler: "runWorkflow" }
 ```
 
-The handler receives a controlled runtime context:
+handler 会收到受控运行时上下文：
 
 - `context.config`
 - `context.credentials.resolve(id)`
@@ -232,37 +232,37 @@ The handler receives a controlled runtime context:
 - `context.checkpoint(step, summary)`
 - `context.logger`
 
-A runnable executor demo is available in:
+可运行的 executor demo 位于：
 
 ```text
 examples/plugins/fake-upload/
 ```
 
-Verify it end to end:
+端到端验证：
 
 ```bash
 pnpm test:plugin
 ```
 
-## Tool Policy
+## 工具策略
 
-Each plugin tool declares an effect:
+每个插件工具都会声明 effect：
 
-- `read`: read-only operation
-- `write`: mutation
-- `dangerous`: destructive, high-risk, or permission-changing operation
+- `read`：只读操作
+- `write`：写入或修改操作
+- `dangerous`：删除、禁用、权限变更等高风险操作
 
-Local plugin policy controls dangerous tools:
+本地插件策略控制 `dangerous` 工具如何执行：
 
-- `block`: return `CONFIRMATION_REQUIRED` and do not call the remote service.
-- `auditOnly`: execute and record dangerous policy evidence.
-- `allow`: execute and record normal audit evidence.
+- `block`：返回 `CONFIRMATION_REQUIRED`，不调用远程服务。
+- `auditOnly`：执行调用，并记录危险策略 audit 证据。
+- `allow`：执行调用，并记录普通 audit 证据。
 
-MCPHub is middleware. In many deployments, the MCP client or agent host owns final tool approval. MCPHub preserves effect metadata and audit evidence so that approval systems can make informed decisions.
+MCPHub 是中间件。在很多部署方式里，最终工具审批由 MCP client 或 Agent host 负责。MCPHub 会保留 effect 元数据和 audit 证据，让审批系统可以据此做判断。
 
-## Verification
+## 验证
 
-Common checks:
+常用检查：
 
 ```bash
 pnpm typecheck
@@ -273,44 +273,44 @@ pnpm test:e2e
 pnpm test:plugin
 ```
 
-Running-instance checks:
+运行中服务检查：
 
 ```bash
 pnpm dev:smoke
 pnpm docker:smoke
 ```
 
-Docker Compose config check:
+Docker Compose 配置检查：
 
 ```bash
 docker compose config
 ```
 
-## Repository Layout
+## 项目结构
 
 ```text
 apps/
-  server/          Fastify server and HTTP/MCP entrypoints
-  extension/       Browser detector extension
+  server/          Fastify 服务，以及 HTTP/MCP 入口
+  extension/       浏览器检测扩展
 
 packages/
-  core/            Shared schemas and domain types
-  db/              Memory and PostgreSQL repositories
-  extractors/      Web content extraction
-  mcp/             MCP gateway and SDK server
-  plugins/         Plugin SDK, registry, local loader
-  api-connector/   REST execution and redaction
-  credentials/     Environment-backed credential store
-  policy/          Tool policy evaluation
-  audit/           Tool-call audit logger
+  core/            共享 schema 和领域类型
+  db/              内存与 PostgreSQL repository
+  extractors/      网页内容提取
+  mcp/             MCP gateway 和 SDK server
+  plugins/         插件 SDK、registry、本地 loader
+  api-connector/   REST 执行与脱敏
+  credentials/     基于环境变量的凭据存储
+  policy/          工具策略评估
+  audit/           工具调用 audit logger
 
-scripts/           Smoke tests, fixtures, plugin CLI
-docs/              Deployment, operations, plugin, design, and plan docs
-examples/plugins/  Runnable example plugins
+scripts/           smoke test、fixture、插件 CLI
+docs/              部署、运维、插件、设计和计划文档
+examples/plugins/  可运行示例插件
 ```
 
 ## Release
 
-Current release: `v0.1.0`
+当前 release：`v0.1.0`
 
-This first dev release focuses on making MCPHub deployable, inspectable, and verifiable as a middleware platform.
+第一个 dev release 的重点是让 MCPHub 作为中间件平台具备可部署、可检查、可验证的基础能力。
