@@ -66,7 +66,7 @@ MCPHub also includes an independent static homepage app for introducing the proj
 Online homepage:
 
 ```text
-http://zfxt.top/mcpHub/
+https://mcphub.zfxt.top/
 ```
 
 Local development:
