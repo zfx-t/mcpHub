@@ -119,6 +119,12 @@
 | 阶段 26 方向确认：平台标准化 | 用户确认采用方案 A；下一阶段应围绕插件 manifest、tool/resource 命名、错误码、兼容性、文档模板和验证清单建立 MCPHub 开发标准 |
 | 平台标准化设计已落盘为草案 | `docs/superpowers/specs/2026-06-08-platform-standardization-design.md` 定义先文档化、再共享校验、再增强 `plugin:verify`、再对齐 `/api/plugins` 和 `mcphub://status` 的增量标准化路线 |
 | 平台标准化实施计划已落盘为草案 | `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md` 将实现拆为标准文档、共享校验、loader/verifier/diagnostics 集成、模板对齐、测试和最终验证 |
+| 平台标准化已实现并验证 | 已新增 `docs/plugins/standard.md`、core 标准校验、local loader 标准诊断、`plugin:verify` 标准输出、模板/样例 metadata、`/api/plugins` 和 `mcphub://status` 标准汇总；`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm test:e2e`、`pnpm test:plugin`、`pnpm build`、`git diff --check` 和手动 MCP status 验证通过 |
+| 平台标准化后的主要瓶颈变为 API 文档转换 | 当前平台已能写、验、加载、诊断和调用插件；下一阶段更应帮助开发者把已有 REST/OpenAPI 文档快速生成 MCPHub 插件骨架，而不是继续堆单个业务插件 |
+| OpenAPI/API 文档导入是下一阶段推荐路线 | 该路线直接匹配“已有管理后台 REST API 文档，不修改原系统，通过 MCPHub 转成 MCP tool”的核心场景；首版应控制范围，生成可编辑本地插件和人工审查 warning，而不是追求完整 OpenAPI 覆盖 |
+| 项目主页应采用独立官网应用 | 用户在“server 静态首页 / 独立官网 / 后台管理首页”三种形态中选择独立官网；应新建 `apps/web`，与 MCP/API server 解耦，便于独立构建和部署 |
+| 首页视觉应是开发者平台 landing，而不是纯营销页 | UI/UX 检索推荐 developer tool 暗色代码感，但结合项目定位最终采用浅色文档型页面为主、深色终端/架构面板为辅，避免一整页暗色导致信息闷和层级弱 |
+| 首页首版不需要 React | 页面主要是静态介绍、代码片段和内部链接；Vite + TypeScript + semantic HTML/CSS 足够，能降低依赖、构建和审计成本 |
 
 ## 平台化演进草案
 

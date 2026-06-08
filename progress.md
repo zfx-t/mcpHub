@@ -613,7 +613,7 @@
   - 下一步提交实施计划与规划文件，并请求用户审阅。
 
 ### 阶段 27：平台标准化实现
-- **状态：** in_progress
+- **状态：** complete
 - **开始时间：** 2026-06-08 CST
 - 执行的操作：
   - 用户要求使用 `$executing-plans` 和 `$subagent-driven-development` 按计划完成任务。
@@ -651,3 +651,38 @@
     - `59beba2 Expose plugin standard diagnostics`
     - `0f870a9 Record platform standardization completion`
   - 阶段 27 完成。
+
+### 阶段 28：平台标准化后续路线规划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求继续规划后续任务，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已恢复当前 Git 状态、近期提交、`task_plan.md`、`progress.md`、`findings.md`、插件标准文档、插件开发文档和 `package.json` 脚本。
+  - 当前分支 `develope` 工作树起始状态干净，本地比 `origin/develope` 领先 10 个提交。
+  - 当前已完成能力：dev 上线诊断、本地插件加载、HTTP operation tool、executor workflow、credential/policy/audit、插件脚手架与验证、示例插件、通用 MCP client CLI、插件标准校验和平台标准诊断。
+  - 初步判断：平台已经从“能写插件”进入“如何规模化把现有 API/网站能力转成插件”的阶段；下一阶段应避免继续做单个业务插件，优先补 API 文档到 MCPHub 插件的转换路径。
+- 候选路线：
+  - 方案 A：OpenAPI/API 文档导入到 MCPHub 插件。支持从 OpenAPI/Swagger JSON/YAML 或简化 API 描述生成本地插件骨架、tool metadata、config/credential/policy 占位和人工审查 warning。
+  - 方案 B：完整真实 API-to-MCP 接入样板。用一个示例后台 API 文档演示从文档、插件代码、启动 MCPHub 到 `mcp:client call-tool` 的全过程。
+  - 方案 C：部署安全加固。增加 MCP/HTTP 诊断 token、部署环境校验和更明确的生产暴露边界。
+  - 方案 D：插件生命周期诊断。增强 reload、enable/disable、版本/标准状态汇总和插件运行状态可视化 API。
+- 推荐：
+  - 优先选择方案 A，并把方案 B 作为验收样板嵌入设计。理由是用户的核心场景是“不修改已有管理后台和 REST API，通过 MCPHub 插件把 API 转成 MCP”，OpenAPI/API 文档导入能直接降低开发者转换成本，也更接近 RSSHub 式标准平台。
+- 下一步：
+  - 向用户确认是否采用 OpenAPI/API 文档导入作为下一阶段主线；用户确认前不进入代码实现。
+
+### 阶段 29：独立项目官网设计
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求做一个前端或者主页内容，用来展示并介绍项目主要内容。
+  - 已读取 `brainstorming` 和 `ui-ux-pro-max` 技能说明，确认前端/主页属于设计任务，需先确认设计再实现。
+  - 已检查现有 workspace、`apps/extension` Vite 配置和前端文件，确认当前没有独立官网应用，只有浏览器扩展前端。
+  - 向用户提出三种主页形态：挂在 server 的静态首页、独立官网应用、后台管理首页；用户选择 B：独立官网应用。
+  - 已使用 `ui-ux-pro-max` 查询 developer tool / middleware platform / landing page 设计系统、landing pattern、配色、字体、响应式和可访问性建议。
+  - 设计取舍：采用 `apps/web` 独立 Vite + TypeScript + plain HTML/CSS，不引入 React；页面定位为 developer platform landing。
+  - 视觉取舍：不采用全暗色 terminal 风，而采用浅色文档型页面为主、深色终端/架构面板为视觉焦点，强调 MCPHub 的平台可信度和开发者工具属性。
+  - 用户确认该 UI 设计方向后，已写入设计文档 `docs/superpowers/specs/2026-06-08-project-homepage-design.md`。
+- 下一步：
+  - 已完成设计文档自检：新文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确排除 dashboard、live status、marketplace、login、3D/video、React、docs routing 和语言切换；`git diff --check` 通过。
+  - 请用户审阅设计文档；用户批准后再进入实施计划和代码实现。
