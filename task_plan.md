@@ -317,8 +317,19 @@
 - [x] 拆分信息架构重建、内容写作、视觉系统、渐进增强、本地浏览器验证、workspace 验证和提交阶段
 - [x] 写入 `docs/superpowers/plans/2026-06-08-project-docs-portal-redesign-implementation-plan.md`
 - [x] 实施计划自检并提交
-- [ ] 用户审阅实施计划后进入 `apps/web` 代码重构
-- **状态：** in_progress
+- [x] 用户审阅实施计划后进入 `apps/web` 代码重构
+- **状态：** complete
+
+### 阶段 34：项目官网文档门户实现
+- [x] Phase 0：基线与工作树保护
+- [x] Phase 1：重建 `apps/web/index.html` 信息架构
+- [x] Phase 2：补充 About、Docs、Architecture、Quick Start、MCP Surface、Plugin System、Roadmap 内容
+- [x] Phase 3：重写 `apps/web/src/styles.css` 为文档门户视觉系统
+- [x] Phase 4：复用并确认 `apps/web/src/main.ts` 渐进增强适配新 markup
+- [x] Phase 5：运行 web app typecheck/build 和 Vite 浏览器响应式验证
+- [x] Phase 6：运行 workspace lint/typecheck/build 和 `git diff --check`
+- [x] Phase 7：审查 diff、确认 ignored 产物未纳入提交并提交实现
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？

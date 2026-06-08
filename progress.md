@@ -778,3 +778,37 @@
   - 实施计划自检通过：未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确限制在 `apps/web` 静态官网和规划文件；验收标准覆盖内容结构、视觉响应式、渐进增强、本地浏览器验证、workspace 验证和提交检查；`git diff --check` 通过。
   - 提交实施计划和规划文件。
   - 用户审阅实施计划后进入 `apps/web` 代码重构。
+
+### 阶段 34：项目官网文档门户实现
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 使用 `$executing-plans` 按 `docs/superpowers/plans/2026-06-08-project-docs-portal-redesign-implementation-plan.md` 执行。
+  - Phase 0：确认当前分支为 `develope`，工作树起始干净，`apps/web` 已存在，本次不修改 MCP server/runtime。
+  - Phase 1-2：重建 `apps/web/index.html`，新增 Header、Hero、About、Documentation Center、Architecture、Quick Start、MCP Surface、Plugin System、Current Progress/Roadmap 和 Footer。
+  - Phase 3：重写 `apps/web/src/styles.css` 为文档门户视觉系统，采用浅色文档底、深色架构/代码面板、蓝色协议强调、绿色状态点。
+  - Phase 4：复用 `apps/web/src/main.ts` 的当前年份、hash 导航高亮和 copy button 渐进增强，新 markup 继续使用 `data-current-year`、`data-nav-link`、`data-copy-target`。
+  - 浏览器检查发现首轮移动端 hero 过高：375px hero 接近 1100px，768px tablet 也因堆叠过长导致下一节不可见。
+  - 已压缩移动端 hero 间距、字号和架构面板密度，并让 768px 起进入 hero 两栏布局。
+- 验证：
+  - `pnpm --filter @mcphub/web typecheck` 通过。
+  - `pnpm --filter @mcphub/web build` 通过。
+  - Vite dev server 启动在 `http://127.0.0.1:5174/`，因为 5173 被占用。
+  - `curl -fsS http://127.0.0.1:5174/` 返回新 homepage HTML。
+  - Headless Chrome CDP 视口验证：
+    - 320px：`clientWidth=320`、`scrollWidth=320`、`bodyScrollWidth=320`、`h1Count=1`、`aboutTop=894`、无横向滚动。
+    - 375px：`clientWidth=375`、`scrollWidth=375`、`bodyScrollWidth=375`、`h1Count=1`、`aboutTop=801`、无横向滚动。
+    - 768px：`clientWidth=753`、`scrollWidth=753`、`bodyScrollWidth=753`、`h1Count=1`、`aboutTop=623`、无横向滚动。
+    - 1024px：`clientWidth=1009`、`scrollWidth=1009`、`bodyScrollWidth=1009`、`h1Count=1`、`aboutTop=623`、无横向滚动。
+    - 1440px：`clientWidth=1425`、`scrollWidth=1425`、`bodyScrollWidth=1425`、`h1Count=1`、`aboutTop=599`、无横向滚动。
+  - 通过截图人工检查 375px 和 1440px：移动端首屏露出 About，桌面端导航、hero、架构面板和 About 信息密度正常。
+  - `pnpm lint` 通过。
+  - `pnpm typecheck` 通过。
+  - `pnpm build` 通过。
+  - `git diff --check` 通过。
+  - `apps/web/dist/` 和 `apps/web/node_modules/` 仍为 ignored，未纳入提交范围。
+- 修改的文件：
+  - `apps/web/index.html`
+  - `apps/web/src/styles.css`
+  - `task_plan.md`
+  - `progress.md`
