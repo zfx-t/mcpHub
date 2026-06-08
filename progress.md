@@ -685,4 +685,18 @@
   - 用户确认该 UI 设计方向后，已写入设计文档 `docs/superpowers/specs/2026-06-08-project-homepage-design.md`。
 - 下一步：
   - 已完成设计文档自检：新文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确排除 dashboard、live status、marketplace、login、3D/video、React、docs routing 和语言切换；`git diff --check` 通过。
-  - 请用户审阅设计文档；用户批准后再进入实施计划和代码实现。
+  - 用户已确认设计文档没有问题，进入实施计划阶段。
+
+### 阶段 30：独立项目官网实施计划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 已恢复独立官网设计文档 `docs/superpowers/specs/2026-06-08-project-homepage-design.md`。
+  - 已检查 `pnpm-workspace.yaml`、根 `package.json`、`apps/extension`/`apps/server` 结构和 `.gitignore`。
+  - 确认 `apps/*` 已被 workspace 覆盖，新建 `apps/web` 会自然纳入 `pnpm -r build` 和 `pnpm -r typecheck`。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-08-project-homepage-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-8：基线与工作树保护、workspace app skeleton、语义页面内容、视觉系统和 CSS、轻量渐进增强、README 入口、自动化验证、浏览器验证、提交和汇报。
+  - 验证策略明确包含 `pnpm --filter @mcphub/web typecheck`、`pnpm --filter @mcphub/web build`、`pnpm lint`、`pnpm typecheck`、`pnpm build`、`git diff --check` 和浏览器响应式检查。
+- 下一步：
+  - 已完成实施计划自检：计划文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围与设计文档一致；验收标准覆盖 workspace app、页面内容、响应式、构建、lint/typecheck、浏览器检查和构建产物排除；`git diff --check` 通过。
+  - 请求用户审阅实施计划；用户批准后进入代码实现。

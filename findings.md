@@ -125,6 +125,8 @@
 | 项目主页应采用独立官网应用 | 用户在“server 静态首页 / 独立官网 / 后台管理首页”三种形态中选择独立官网；应新建 `apps/web`，与 MCP/API server 解耦，便于独立构建和部署 |
 | 首页视觉应是开发者平台 landing，而不是纯营销页 | UI/UX 检索推荐 developer tool 暗色代码感，但结合项目定位最终采用浅色文档型页面为主、深色终端/架构面板为辅，避免一整页暗色导致信息闷和层级弱 |
 | 首页首版不需要 React | 页面主要是静态介绍、代码片段和内部链接；Vite + TypeScript + semantic HTML/CSS 足够，能降低依赖、构建和审计成本 |
+| 独立官网会被根 workspace 构建纳入验证 | `pnpm-workspace.yaml` 已包含 `apps/*`，新建 `apps/web` 后根 `pnpm build` 和 `pnpm typecheck` 会覆盖该 app；实施计划必须验证 root build，避免新增官网破坏 monorepo 构建 |
+| 官网构建产物不应提交 | `.gitignore` 已包含 `dist/` 和 `**/*.tsbuildinfo`，实施时需要确认 `apps/web/dist` 与 tsbuildinfo 未被 staged |
 
 ## 平台化演进草案
 
