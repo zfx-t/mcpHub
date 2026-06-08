@@ -358,4 +358,3 @@ Exit criteria:
 - Browser automation plugins.
 - Sandboxed untrusted plugin runtime.
 - Public plugin marketplace.
-
