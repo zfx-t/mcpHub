@@ -315,4 +315,3 @@ The implementation plan should make concrete choices for:
 - whether step-level audit needs a new table or can reuse existing audit records
 - which upload helper subset is included in P2
 - how much type information the plugin SDK exposes in the first executor release
-
