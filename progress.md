@@ -532,7 +532,7 @@
 *每个阶段完成后或遇到错误时更新此文件*
 
 ### 阶段 23：v0.1.0 后续路线规划
-- **状态：** in_progress
+- **状态：** complete
 - **开始时间：** 2026-06-08 11:00:29 CST
 - 执行的操作：
   - 用户要求继续规划后面的工作，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
@@ -548,3 +548,16 @@
   - 已重新读取 `brainstorming` 和 `planning-with-files-zh` 技能说明，确认当前仍处于设计门槛内，不能直接进入代码实现。
   - 写入设计文档 `docs/superpowers/specs/2026-06-08-generic-mcp-client-design.md`。
   - 完成设计文档自检：无 TBD/TODO/FIXME/占位符；范围明确排除具体产品客户端配置、完整 Agent 框架、认证/OAuth、持久 session、stdio transport 和独立 npm 包发布；`git diff --check` 通过。
+  - 设计提交：`97e092d Design generic MCP client CLI`。
+  - 用户确认继续完成，视为设计文档通过，进入实施计划阶段。
+
+### 阶段 24：通用 MCP client CLI 实施计划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 重新读取通用 MCP client 设计文档、现有 `scripts/` 目录、plugin CLI 测试和 smoke 脚本，确认实现可自然落在 `scripts/mcp-client.ts` 与 `scripts/mcp-client/` helper 下。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-9：基线、package script/CLI 入口、参数解析、HTTP JSON-RPC helper、响应解析、命令 handler、输出和错误、自动化测试、文档、最终验证。
+  - 完成实施计划自检：计划文档本身无 TBD/TODO/FIXME/占位符；范围明确排除具体产品客户端配置、完整 Agent 框架、认证/OAuth、持久 session、stdio transport 和独立 npm 包发布；验收标准、风险和测试策略已覆盖。
+- 下一步：
+  - 提交实施计划，并等待用户确认进入代码实现。

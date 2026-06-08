@@ -223,7 +223,15 @@
 - [x] 呈现通用 MCP client CLI 的架构、命令、数据流、错误处理和测试设计
 - [x] 用户确认路线后写入新的设计文档
 - [x] 设计文档自检并提交
-- [ ] 用户审阅设计文档后进入实施计划
+- [x] 用户审阅设计文档后进入实施计划
+- **状态：** complete
+
+### 阶段 24：通用 MCP client CLI 实施计划
+- [x] 恢复 `docs/superpowers/specs/2026-06-08-generic-mcp-client-design.md` 和现有脚本/测试结构
+- [x] 拆分 CLI 入口、参数解析、HTTP JSON-RPC helper、SSE/JSON 解析、命令 handler、错误输出、测试、文档和最终验证阶段
+- [x] 写入 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md`
+- [x] 自检实施计划覆盖验收标准、风险、测试和文档更新
+- [ ] 用户审阅实施计划后进入代码实现
 - **状态：** in_progress
 
 ## 关键问题
