@@ -552,7 +552,7 @@
   - 用户确认继续完成，视为设计文档通过，进入实施计划阶段。
 
 ### 阶段 24：通用 MCP client CLI 实施计划
-- **状态：** in_progress
+- **状态：** complete
 - **开始时间：** 2026-06-08 CST
 - 执行的操作：
   - 重新读取通用 MCP client 设计文档、现有 `scripts/` 目录、plugin CLI 测试和 smoke 脚本，确认实现可自然落在 `scripts/mcp-client.ts` 与 `scripts/mcp-client/` helper 下。
@@ -561,3 +561,29 @@
   - 完成实施计划自检：计划文档本身无 TBD/TODO/FIXME/占位符；范围明确排除具体产品客户端配置、完整 Agent 框架、认证/OAuth、持久 session、stdio transport 和独立 npm 包发布；验收标准、风险和测试策略已覆盖。
 - 下一步：
   - 提交实施计划，并等待用户确认进入代码实现。
+
+### 阶段 25：通用 MCP client CLI 实现
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 按 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md` 实现通用 MCP client CLI。
+  - 新增 `pnpm mcp:client`，入口为 `scripts/mcp-client.ts`。
+  - 新增 `scripts/mcp-client/common.ts`：解析 `--url`、`--json`、`--protocol-version`、`--timeout-ms`、`--uri`、`--name`、`--args`。
+  - 新增 `scripts/mcp-client/client.ts`：通过真实 Streamable HTTP `/mcp` 发送 JSON-RPC，支持 JSON/SSE 解析、进程内 `Mcp-Session-Id`、请求超时和脱敏错误输出。
+  - 新增 `scripts/mcp-client/commands.ts`：实现 `inspect`、`list-resources`、`read-resource`、`list-tools`、`call-tool` 和人类可读/JSON 输出。
+  - 新增 `scripts/mcp-client.test.ts`，覆盖 parser、JSON/SSE 解析、HTTP 错误、429、malformed response、network failure、timeout、body stall、session header、脱敏和真实 HTTP MCPHub 集成。
+  - 新增 `docs/clients/generic-mcp-client.md`，并在 `README.md` 和 `README_cn.md` 中加入通用 client 入口。
+- 审查与修复：
+  - spec 审查初审要求补 tool/resource not found 引导、parse error 状态/类型/body 摘要和错误路径测试；已修复并通过复审。
+  - 代码质量审查初审要求支持 session header、请求 timeout、错误输出脱敏；已修复。
+  - 代码质量复审指出 timeout 应覆盖 body consumption；已修复并补 headers-sent/body-never-ends 回归测试。
+  - 代码质量最终复审通过。
+- 验证：
+  - `pnpm typecheck` 通过。
+  - `pnpm lint` 通过。
+  - `pnpm test` 通过，15 个测试文件、117 个测试。
+  - `pnpm test:e2e` 通过。
+  - `pnpm test:plugin` 通过。
+  - `pnpm build` 通过。
+  - `git diff --check` 通过。
+  - 运行中服务验证通过：`inspect`、`list-tools`、`read-resource --uri mcphub://status`、`call-tool --name source.search --args '{}'` 均通过。

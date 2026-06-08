@@ -231,8 +231,21 @@
 - [x] 拆分 CLI 入口、参数解析、HTTP JSON-RPC helper、SSE/JSON 解析、命令 handler、错误输出、测试、文档和最终验证阶段
 - [x] 写入 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md`
 - [x] 自检实施计划覆盖验收标准、风险、测试和文档更新
-- [ ] 用户审阅实施计划后进入代码实现
-- **状态：** in_progress
+- [x] 用户审阅实施计划后进入代码实现
+- **状态：** complete
+
+### 阶段 25：通用 MCP client CLI 实现
+- [x] Phase 0：基线与工作树保护
+- [x] Phase 1：新增 `mcp:client` package script 和 CLI 入口
+- [x] Phase 2：实现参数解析与校验
+- [x] Phase 3：实现 Streamable HTTP JSON-RPC helper
+- [x] Phase 4：实现 JSON/SSE 响应解析
+- [x] Phase 5：实现 `inspect`、`list-resources`、`read-resource`、`list-tools`、`call-tool`
+- [x] Phase 6：实现人类可读输出、`--json`、错误提示、timeout、session header 和脱敏
+- [x] Phase 7：补充 parser、response、error、timeout、session 和真实 HTTP 集成测试
+- [x] Phase 8：新增通用 client 文档并链接 README/README_cn
+- [x] Phase 9：完成最终验证、spec 审查和代码质量审查
+- **状态：** complete
 
 ## 关键问题
 1. 首版目标是通用网页抽取引擎，还是面向少数高价值网站的路由系统？

@@ -12,6 +12,7 @@
     "test:e2e": "tsx scripts/smoke.ts",
     "dev:smoke": "tsx scripts/dev-smoke.ts",
     "docker:smoke": "tsx scripts/docker-smoke.ts",
+    "mcp:client": "node --import tsx scripts/mcp-client.ts",
     "plugin:create": "node --import tsx scripts/plugin-create.ts",
     "plugin:verify": "pnpm --filter @mcphub/core build && node --import tsx scripts/plugin-verify.ts",
     "test:plugin": "node --import tsx scripts/verify-example-plugin.ts",

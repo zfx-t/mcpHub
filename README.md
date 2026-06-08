@@ -51,6 +51,14 @@ The MCP endpoint is:
 http://localhost:3000/mcp
 ```
 
+Verify the MCP endpoint with the generic client:
+
+```bash
+pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect
+```
+
+Generic client setup and troubleshooting are documented in [docs/clients/generic-mcp-client.md](docs/clients/generic-mcp-client.md).
+
 ## Docker Dev Stack
 
 Start the Docker Compose stack with PostgreSQL and the built-in sample admin plugin enabled:

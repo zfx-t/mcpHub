@@ -243,10 +243,10 @@ Exit criteria:
 
 ## Acceptance Checklist
 
-- [ ] `pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect` works against a running MCPHub instance.
-- [ ] `list-resources`, `read-resource`, `list-tools`, and `call-tool` work.
-- [ ] `--json` works for command output.
-- [ ] Common failures produce actionable messages.
-- [ ] Tests cover parser, response parsing, errors, and live HTTP integration.
-- [ ] `docs/clients/generic-mcp-client.md` exists and is linked from both README files.
-- [ ] Final verification commands pass.
+- [x] `pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect` works against a running MCPHub instance.
+- [x] `list-resources`, `read-resource`, `list-tools`, and `call-tool` work.
+- [x] `--json` works for command output.
+- [x] Common failures produce actionable messages.
+- [x] Tests cover parser, response parsing, errors, and live HTTP integration.
+- [x] `docs/clients/generic-mcp-client.md` exists and is linked from both README files.
+- [x] Final verification commands pass.
