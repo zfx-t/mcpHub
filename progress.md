@@ -639,8 +639,15 @@
     - `pnpm test:plugin` 通过。
     - `pnpm build` 通过。
     - `git diff --check` 通过。
+  - 手动验证通过：
+    - `pnpm plugin:verify examples/plugins/fake-upload` 输出 `Standard: compatible`、`Warnings: 0`、`Errors: 0`。
+    - 默认 3000 端口被已有进程占用，改用 `PORT=3011 REQUEST_LOGGING=false pnpm dev` 启动临时服务。
+    - `curl http://127.0.0.1:3011/api/plugins` 返回 `{"plugins":[],"diagnostics":[]}`。
+    - `pnpm mcp:client --url http://127.0.0.1:3011/mcp read-resource --uri mcphub://status` 成功返回 status，其中 `plugins.standard` 为 `{ compatible: 0, warnings: 0, errors: 0 }`。
+    - 临时 dev server 已停止。
   - 已按功能拆分提交：
     - `55b17d9 Add plugin standard validation`
     - `0c7af4c Enforce plugin standard in local verification`
     - `59beba2 Expose plugin standard diagnostics`
+    - `0f870a9 Record platform standardization completion`
   - 阶段 27 完成。
