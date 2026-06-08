@@ -4,6 +4,7 @@ import {
   normalizeUrl,
   platformErrorCodeSchema,
   pluginManifestSchema,
+  validatePluginStandard,
   ruleSchema,
   sourceMatchesUrl,
   toolEffectSchema,
@@ -67,6 +68,14 @@ describe("platform schemas", () => {
         version: "0.1.0",
         type: "api",
         description: "Expose admin user APIs as MCP tools.",
+        homepage: "https://example.com/admin",
+        author: "MCPHub",
+        license: "MIT",
+        tags: ["admin", "users"],
+        mcphub: {
+          minVersion: "0.1.0",
+          capabilities: ["http", "credentials", "policy"]
+        },
         credentials: [{ id: "admin-token", type: "bearer" }],
         tools: [
           {
@@ -89,6 +98,10 @@ describe("platform schemas", () => {
       })
     ).toMatchObject({
       id: "admin-users",
+      mcphub: {
+        minVersion: "0.1.0",
+        capabilities: ["http", "credentials", "policy"]
+      },
       tools: expect.arrayContaining([
         expect.objectContaining({ effect: "read", operation: { type: "http", method: "GET", path: "/api/users" } })
       ])
@@ -280,6 +293,91 @@ describe("platform schemas", () => {
         ]
       })
     ).toThrow(/must define either operation or executor/);
+  });
+
+  it("reports standard compatibility warnings for missing metadata", () => {
+    const manifest = pluginManifestSchema.parse({
+      id: "legacy-plugin",
+      name: "Legacy Plugin",
+      version: "0.1.0",
+      type: "api",
+      description: "Legacy plugin without compatibility metadata.",
+      tools: [
+        {
+          name: "legacy.items.list",
+          description: "List items.",
+          inputSchema: { type: "object", properties: {} },
+          effect: "read",
+          operation: { type: "http", method: "GET", path: "/items" }
+        }
+      ]
+    });
+
+    expect(validatePluginStandard(manifest)).toMatchObject({
+      compatible: true,
+      warnings: 1,
+      errors: 0,
+      diagnostics: [expect.objectContaining({ code: "PLUGIN_COMPATIBILITY_WARNING", severity: "warning" })]
+    });
+  });
+
+  it("rejects unsupported standard capabilities", () => {
+    const manifest = pluginManifestSchema.parse({
+      id: "future-plugin",
+      name: "Future Plugin",
+      version: "0.1.0",
+      type: "custom",
+      description: "Future plugin.",
+      mcphub: {
+        minVersion: "0.1.0",
+        capabilities: ["executor"]
+      },
+      tools: [
+        {
+          name: "future.jobs.run",
+          description: "Run job.",
+          inputSchema: { type: "object", properties: {} },
+          effect: "write",
+          executor: { type: "module", handler: "runJob" }
+        }
+      ]
+    });
+
+    expect(validatePluginStandard(manifest, { supportedCapabilities: ["http"] })).toMatchObject({
+      compatible: false,
+      warnings: 0,
+      errors: 1,
+      diagnostics: [expect.objectContaining({ code: "PLUGIN_COMPATIBILITY_ERROR", severity: "error" })]
+    });
+  });
+
+  it("reports standard errors for non-object input schemas", () => {
+    const manifest = pluginManifestSchema.parse({
+      id: "bad-input",
+      name: "Bad Input",
+      version: "0.1.0",
+      type: "api",
+      description: "Bad input schema.",
+      mcphub: {
+        minVersion: "0.1.0",
+        capabilities: ["http"]
+      },
+      tools: [
+        {
+          name: "bad.items.list",
+          description: "List items.",
+          inputSchema: { type: "string" },
+          effect: "read",
+          operation: { type: "http", method: "GET", path: "/items" }
+        }
+      ]
+    });
+
+    expect(validatePluginStandard(manifest)).toMatchObject({
+      compatible: false,
+      errors: 1,
+      diagnostics: [expect.objectContaining({ code: "PLUGIN_MANIFEST_INVALID", path: "tools.0.inputSchema" })]
+    });
   });
 
   it("accepts the validated rule type", () => {
