@@ -49,13 +49,13 @@ describe("WebMcpGateway", () => {
     const status = JSON.parse((await gateway.readResource("mcphub://status"))[0].text) as {
       service: string;
       repository: { mode: string };
-      plugins: { loaded: number; diagnostics: number };
+      plugins: { loaded: number; diagnostics: number; standard: { compatible: number; warnings: number; errors: number } };
       mcp: { resources: { uris: string[] }; tools: { names: string[] } };
     };
 
     expect(status.service).toBe("mcphub");
     expect(status.repository.mode).toBe("memory");
-    expect(status.plugins).toMatchObject({ loaded: 0, diagnostics: 0 });
+    expect(status.plugins).toMatchObject({ loaded: 0, diagnostics: 0, standard: { compatible: 0, warnings: 0, errors: 0 } });
     expect(status.mcp.resources.uris).toContain("mcphub://status");
     expect(status.mcp.tools.names).toContain("source.search");
   });
@@ -112,7 +112,8 @@ describe("WebMcpGateway", () => {
       pluginMetadata: {
         "sample-admin": {
           source: "built_in",
-          credentials: [{ id: "admin-token", type: "bearer", configured: true }]
+          credentials: [{ id: "admin-token", type: "bearer", configured: true }],
+          standard: { compatible: true, warnings: 0, errors: 0 }
         }
       }
     });
@@ -121,9 +122,9 @@ describe("WebMcpGateway", () => {
     await expect(gateway.readResource("mcphub://plugins/sample-admin/tools")).resolves.toEqual([
       expect.objectContaining({ text: expect.stringContaining("admin.users.disable") })
     ]);
-    await expect(gateway.readResource("mcphub://plugins")).resolves.toEqual([
-      expect.objectContaining({ text: expect.stringContaining('"source": "built_in"') })
-    ]);
+    const pluginsText = (await gateway.readResource("mcphub://plugins"))[0].text;
+    expect(pluginsText).toContain('"source": "built_in"');
+    expect(pluginsText).toContain('"standard"');
     await expect(gateway.readResource("mcphub://status")).resolves.toEqual([
       expect.objectContaining({ text: expect.stringContaining('"admin.users.list"') })
     ]);

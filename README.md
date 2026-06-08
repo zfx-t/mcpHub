@@ -172,11 +172,11 @@ pnpm plugin:verify examples/plugins/my-admin
 Use the executor template for multi-step workflow tools:
 
 ```bash
-pnpm plugin:create my-workflow --template executor --tool-name my.workflow.run
+pnpm plugin:create my-workflow --template executor --tool-name my.workflow.jobs.run
 pnpm plugin:verify examples/plugins/my-workflow
 ```
 
-The full plugin authoring guide is in [docs/plugins/development.md](docs/plugins/development.md).
+The full plugin authoring guide is in [docs/plugins/development.md](docs/plugins/development.md). The reference plugin standard is in [docs/plugins/standard.md](docs/plugins/standard.md).
 
 ## HTTP API Plugin Example
 
@@ -187,6 +187,10 @@ export default {
   version: "0.1.0",
   type: "api",
   description: "Expose admin user APIs.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
   credentials: [{ id: "admin-token", type: "bearer" }],
   tools: [
     {

@@ -4,6 +4,14 @@ export default {
   version: "0.1.0",
   type: "custom",
   description: "Example executor plugin that performs a fake multi-step upload workflow.",
+  homepage: "https://example.com/fake-upload",
+  author: "MCPHub",
+  license: "MIT",
+  tags: ["example", "upload"],
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["executor", "credentials", "policy", "audit", "checkpoint", "plugin-config"]
+  },
   credentials: [{ id: "upload-token", type: "bearer" }],
   tools: [
     {

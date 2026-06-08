@@ -170,11 +170,11 @@ pnpm plugin:verify examples/plugins/my-admin
 创建多步骤工作流插件骨架：
 
 ```bash
-pnpm plugin:create my-workflow --template executor --tool-name my.workflow.run
+pnpm plugin:create my-workflow --template executor --tool-name my.workflow.jobs.run
 pnpm plugin:verify examples/plugins/my-workflow
 ```
 
-完整插件开发指南见 [docs/plugins/development.md](docs/plugins/development.md)。
+完整插件开发指南见 [docs/plugins/development.md](docs/plugins/development.md)，插件标准参考见 [docs/plugins/standard.md](docs/plugins/standard.md)。
 
 ## HTTP API 插件示例
 
@@ -185,6 +185,10 @@ export default {
   version: "0.1.0",
   type: "api",
   description: "Expose admin user APIs.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
   credentials: [{ id: "admin-token", type: "bearer" }],
   tools: [
     {

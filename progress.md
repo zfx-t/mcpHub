@@ -611,3 +611,24 @@
   - 实施计划拆分为 Phase 0-9：基线、标准文档、core 标准类型与校验、local loader 诊断、`plugin:verify` 标准门禁、平台诊断、模板和样例对齐、自动化测试、最终验证、提交策略。
   - 实施计划自检通过：未发现 TBD/TODO/FIXME/占位符；范围与设计一致，明确排除插件市场、签名、OpenAPI 导入、浏览器自动化、多租户权限、生产 MCP 鉴权和 runtime 重写；`git diff --check` 通过。
   - 下一步提交实施计划与规划文件，并请求用户审阅。
+
+### 阶段 27：平台标准化实现
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求使用 `$executing-plans` 和 `$subagent-driven-development` 按计划完成任务。
+  - 已读取实施计划 `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md`、`executing-plans` 和 `subagent-driven-development` 技能说明。
+  - Phase 0 基线通过：`pnpm typecheck` 通过。
+  - 已使用子代理做只读勘察，确认 `/api/plugins`、`mcphub://status`、plugin templates、local loader、plugin verifier 和测试接缝。
+  - 已新增 `docs/plugins/standard.md`，并在 `docs/plugins/development.md`、`README.md`、`README_cn.md` 链接标准文档。
+  - 已在 core 增加标准 metadata schema、`PlatformCapability` / `StandardDiagnostic` / `PluginStandardSummary` 类型，以及 `validatePluginStandard()` 纯校验 helper。
+  - 已将 local loader 接入标准校验：标准 warning 不阻断加载，标准 error 产生诊断并跳过插件；disabled 插件仍不 import entrypoint。
+  - 已增强 `plugin:verify` 输出：显示 `Standard`、`Warnings`、`Errors`，失败诊断包含标准 code/path/suggestion。
+  - 已对齐模板和样例插件：`plugin:create` 生成 `mcphub.minVersion` 与 capabilities，sample admin 和 fake-upload 加入标准 metadata。
+  - 已对齐平台诊断：`/api/plugins` 包含插件 `standard` 摘要，`mcphub://status` / `/api/status` 包含标准聚合计数。
+  - focused verification 已通过：
+    - `pnpm vitest run scripts/plugin-cli.test.ts packages/core/src/core.test.ts packages/plugins/src/local-loader.test.ts packages/mcp/src/gateway.test.ts apps/server/src/app.test.ts` 通过，5 个测试文件、67 个测试。
+    - `pnpm typecheck` 通过。
+- 下一步：
+  - 进行代码质量自查，补遗漏测试或文档矛盾。
+  - 运行全量验证：`pnpm lint`、`pnpm test`、`pnpm test:e2e`、`pnpm test:plugin`、`pnpm build`、`git diff --check`。

@@ -25,6 +25,10 @@ function httpApiIndex(options: CreatePluginOptions): string {
   version: "0.1.0",
   type: "api",
   description: "Expose ${options.pluginName} APIs as MCP tools.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
   credentials: [{ id: "${options.credentialId}", type: "${options.credentialType}" }],
   tools: [
     {
@@ -52,6 +56,10 @@ function executorIndex(options: CreatePluginOptions): string {
   version: "0.1.0",
   type: "custom",
   description: "Expose ${options.pluginName} workflows as MCP tools.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["executor", "credentials", "policy", "audit", "checkpoint", "plugin-config"]
+  },
   credentials: [{ id: "${options.credentialId}", type: "${options.credentialType}" }],
   tools: [
     {
@@ -137,7 +145,8 @@ This is a generated MCPHub ${mode} plugin.
 
 1. Update \`description\`, \`inputSchema\`, and the tool body in \`index.js\`.
 2. Set \`config.baseUrl\` in \`plugin.config.json\` to your real service URL.
-3. Export the required secret before running MCPHub:
+3. Review the plugin standard in \`docs/plugins/standard.md\`.
+4. Export the required secret before running MCPHub:
 
 \`\`\`bash
 export ${options.secretEnv}=replace-me
