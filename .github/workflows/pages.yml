@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - develope
     paths:
       - ".github/workflows/pages.yml"
       - "apps/web/**"
