@@ -308,7 +308,16 @@
 - [x] 明确新版信息架构：Hero、About、Docs、Architecture、Quick Start、MCP Surface、Plugin System、Progress/Roadmap、Footer
 - [x] 写入 `docs/superpowers/specs/2026-06-08-project-docs-portal-redesign.md`
 - [x] 设计文档自检并提交
-- [ ] 用户审阅设计文档后进入实施计划
+- [x] 用户审阅设计文档后进入实施计划
+- **状态：** complete
+
+### 阶段 33：项目官网文档门户实施计划
+- [x] 恢复重设计规格、旧官网实施计划、当前 `apps/web` 结构和规划上下文
+- [x] 明确本次是已有静态官网重构，不是新建 workspace app
+- [x] 拆分信息架构重建、内容写作、视觉系统、渐进增强、本地浏览器验证、workspace 验证和提交阶段
+- [x] 写入 `docs/superpowers/plans/2026-06-08-project-docs-portal-redesign-implementation-plan.md`
+- [x] 实施计划自检并提交
+- [ ] 用户审阅实施计划后进入 `apps/web` 代码重构
 - **状态：** in_progress
 
 ## 关键问题

@@ -764,3 +764,17 @@
   - 设计文档自检通过：新文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确限制在 `apps/web` 静态官网，不修改 MCP server runtime、插件 loader、package API 或 GitHub Pages workflow；`git diff --check` 通过。
   - 提交设计文档和规划文件。
   - 请求用户审阅设计文档；通过后再写实施计划并进入 `apps/web` 代码重构。
+
+### 阶段 33：项目官网文档门户实施计划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户确认重设计文档没有问题，要求继续。
+  - 已恢复重设计规格 `docs/superpowers/specs/2026-06-08-project-docs-portal-redesign.md`、旧官网实施计划、当前 `apps/web` 状态和规划上下文。
+  - 明确本阶段只写实施计划，不修改 `apps/web` 页面代码。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-08-project-docs-portal-redesign-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-7：基线保护、信息架构重建、开发者内容、视觉系统、渐进增强、本地 Web 验证、workspace 验证、审查提交和汇报。
+- 下一步：
+  - 实施计划自检通过：未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确限制在 `apps/web` 静态官网和规划文件；验收标准覆盖内容结构、视觉响应式、渐进增强、本地浏览器验证、workspace 验证和提交检查；`git diff --check` 通过。
+  - 提交实施计划和规划文件。
+  - 用户审阅实施计划后进入 `apps/web` 代码重构。
