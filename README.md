@@ -63,6 +63,14 @@ Generic client setup and troubleshooting are documented in [docs/clients/generic
 
 MCPHub also includes an independent static homepage app for introducing the project and its developer workflow:
 
+Online homepage:
+
+```text
+http://zfxt.top/mcpHub/
+```
+
+Local development:
+
 ```bash
 pnpm --filter @mcphub/web dev
 pnpm --filter @mcphub/web build

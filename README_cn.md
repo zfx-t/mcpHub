@@ -61,6 +61,14 @@ pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect
 
 MCPHub 也包含一个独立的静态官网应用，用来介绍项目定位和开发者接入流程：
 
+线上主页：
+
+```text
+http://zfxt.top/mcpHub/
+```
+
+本地开发：
+
 ```bash
 pnpm --filter @mcphub/web dev
 pnpm --filter @mcphub/web build
