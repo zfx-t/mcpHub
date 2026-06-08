@@ -43,6 +43,48 @@ export type PlatformErrorCode =
   | "PLUGIN_EXECUTION_ERROR"
   | "AUDIT_WRITE_FAILED";
 
+export type PlatformCapability =
+  | "http"
+  | "executor"
+  | "credentials"
+  | "policy"
+  | "audit"
+  | "checkpoint"
+  | "local-loader"
+  | "plugin-config";
+
+export type StandardDiagnosticSeverity = "info" | "warning" | "error";
+
+export type StandardDiagnosticCode =
+  | "PLUGIN_MANIFEST_INVALID"
+  | "PLUGIN_COMPATIBILITY_WARNING"
+  | "PLUGIN_COMPATIBILITY_ERROR";
+
+export interface PluginCompatibilityMetadata {
+  minVersion?: string;
+  maxVersion?: string;
+  capabilities: string[];
+}
+
+export interface StandardDiagnostic {
+  severity: StandardDiagnosticSeverity;
+  code: StandardDiagnosticCode;
+  message: string;
+  path?: string;
+  suggestion?: string;
+  details?: Record<string, unknown>;
+}
+
+export interface PluginStandardSummary {
+  compatible: boolean;
+  warnings: number;
+  errors: number;
+}
+
+export interface PluginStandardValidationResult extends PluginStandardSummary {
+  diagnostics: StandardDiagnostic[];
+}
+
 export interface RefreshPolicy {
   ttlSeconds: number;
   staleWhileRevalidateSeconds?: number;

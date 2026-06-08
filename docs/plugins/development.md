@@ -4,6 +4,8 @@
 
 本地插件是 trusted server-side JavaScript。MCPHub 会验证 manifest 和 config 形状，并跳过损坏插件，但不会把插件代码当作不可信代码沙箱执行。
 
+插件的参考契约、命名规则、兼容性 metadata 和 verifier 期望见 [MCPHub Plugin Standard](./standard.md)。
+
 ## Quick Start
 
 创建一个 HTTP API 插件：
@@ -16,7 +18,7 @@ pnpm plugin:verify examples/plugins/my-admin
 创建一个 executor workflow 插件：
 
 ```bash
-pnpm plugin:create my-workflow --template executor --tool-name workflow.run
+pnpm plugin:create my-workflow --template executor --tool-name workflow.jobs.run
 pnpm plugin:verify examples/plugins/my-workflow
 ```
 
@@ -55,6 +57,11 @@ export default {
   name: "my-admin",
   version: "0.1.0",
   type: "api",
+  description: "Expose my-admin APIs as MCP tools.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
   credentials: [{ id: "api-token", type: "bearer" }],
   tools: [
     {
@@ -84,7 +91,7 @@ export default {
 ```bash
 pnpm plugin:create my-workflow --template executor \
   --base-url http://127.0.0.1:4001 \
-  --tool-name workflow.run
+  --tool-name workflow.jobs.run
 ```
 
 生成的 `index.js` 会包含一个 executor tool 和对应 handler：
@@ -95,9 +102,14 @@ export default {
   name: "my-workflow",
   version: "0.1.0",
   type: "custom",
+  description: "Expose my-workflow workflows as MCP tools.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["executor", "credentials", "policy", "audit", "checkpoint", "plugin-config"]
+  },
   tools: [
     {
-      name: "workflow.run",
+      name: "workflow.jobs.run",
       description: "Run an example workflow.",
       inputSchema: {
         type: "object",
@@ -291,6 +303,9 @@ pnpm plugin:verify examples/plugins/my-admin
 ```text
 Plugin verification passed
 Plugin: my-admin
+Standard: compatible
+Warnings: 0
+Errors: 0
 Tools:
 - admin.users.list (read, http)
 ```
@@ -360,7 +375,7 @@ create -> edit -> plugin:verify -> MCPHUB_PLUGIN_DIR pnpm dev
 
 `Invalid tool name`
 
-使用 dot-separated lowercase identifiers，例如 `admin.users.list` 或 `workflow.run`。
+使用 `<domain>.<resource>.<action>` 形式的 dot-separated lowercase identifiers，例如 `admin.users.list` 或 `workflow.jobs.run`。
 
 `plugin.config.json` JSON parse error
 

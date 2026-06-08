@@ -5,7 +5,7 @@ import type { AuditLogger } from "@mcphub/audit";
 import { CredentialResolutionError, EnvironmentCredentialStore } from "@mcphub/credentials";
 import type { CredentialStore } from "@mcphub/credentials";
 import { sourceSearchFiltersSchema, toResourceUri } from "@mcphub/core";
-import type { CredentialType, FeedItem, PlatformErrorCode, Plugin, PluginTool } from "@mcphub/core";
+import type { CredentialType, FeedItem, PlatformErrorCode, Plugin, PluginStandardSummary, PluginTool } from "@mcphub/core";
 import type { McpHubRepository } from "@mcphub/db";
 import type { ExtractionService } from "@mcphub/extractors";
 import type { LocalPluginDiagnostic } from "@mcphub/plugins/local-loader";
@@ -33,6 +33,7 @@ export interface PlatformPluginMetadata {
   source: "built_in" | "local";
   credentials: Array<{ id: string; type: CredentialType; configured: boolean }>;
   pluginDir?: string;
+  standard?: PluginStandardSummary;
 }
 
 export interface PlatformGatewayOptions {
@@ -72,6 +73,11 @@ export interface PlatformStatusSummary {
     disabled: number;
     diagnostics: number;
     bySource: Record<string, number>;
+    standard: {
+      compatible: number;
+      warnings: number;
+      errors: number;
+    };
   };
   mcp: {
     resources: {
@@ -287,7 +293,8 @@ export class WebMcpGateway {
         loaded: plugins.length,
         disabled: diagnostics.filter((diagnostic) => diagnostic.code === "disabled_plugin").length,
         diagnostics: diagnostics.length,
-        bySource
+        bySource,
+        standard: summarizePluginStandards(plugins)
       },
       mcp: {
         resources: {
@@ -652,13 +659,12 @@ export class WebMcpGateway {
 
   private decoratePlugin(plugin: Plugin): DecoratedPlugin {
     const metadata = this.platform.pluginMetadata?.[plugin.id];
-    if (!metadata) {
-      return plugin;
-    }
+    const standard = metadata?.standard ?? standardSummaryFromDiagnostics(plugin.id, this.platform.diagnostics ?? []);
     return {
       ...plugin,
-      ...metadata,
-      pluginDir: metadata.pluginDir ? safePathSummary(metadata.pluginDir) : undefined
+      ...(metadata ?? {}),
+      standard,
+      pluginDir: metadata?.pluginDir ? safePathSummary(metadata.pluginDir) : undefined
     };
   }
 
@@ -739,6 +745,31 @@ function redactDiagnosticPaths(diagnostic: LocalPluginDiagnostic): LocalPluginDi
     configPath: diagnostic.configPath ? safePathSummary(diagnostic.configPath) : undefined,
     message: redactKnownPaths(diagnostic.message, pathReplacements),
     details: undefined
+  };
+}
+
+function summarizePluginStandards(plugins: DecoratedPlugin[]): { compatible: number; warnings: number; errors: number } {
+  return plugins.reduce(
+    (summary, plugin) => {
+      const standard = plugin.standard ?? { compatible: true, warnings: 0, errors: 0 };
+      return {
+        compatible: summary.compatible + (standard.compatible ? 1 : 0),
+        warnings: summary.warnings + (standard.warnings > 0 ? 1 : 0),
+        errors: summary.errors + (standard.errors > 0 ? 1 : 0)
+      };
+    },
+    { compatible: 0, warnings: 0, errors: 0 }
+  );
+}
+
+function standardSummaryFromDiagnostics(pluginId: string, diagnostics: LocalPluginDiagnostic[]): PluginStandardSummary {
+  const matching = diagnostics.filter((diagnostic) => diagnostic.pluginId === pluginId && diagnostic.standardDiagnostic);
+  const warnings = matching.filter((diagnostic) => diagnostic.severity === "warning").length;
+  const errors = matching.filter((diagnostic) => diagnostic.severity === "error").length;
+  return {
+    compatible: errors === 0,
+    warnings,
+    errors
   };
 }
 

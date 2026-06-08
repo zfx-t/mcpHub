@@ -111,6 +111,17 @@ export const credentialTypeSchema = z.enum(["bearer", "api_key_header", "api_key
 
 export const auditStatusSchema = z.enum(["allowed", "blocked", "succeeded", "failed", "policy_denied"]);
 
+export const platformCapabilitySchema = z.enum([
+  "http",
+  "executor",
+  "credentials",
+  "policy",
+  "audit",
+  "checkpoint",
+  "local-loader",
+  "plugin-config"
+]);
+
 export const platformErrorCodeSchema = z.enum([
   "PLUGIN_NOT_FOUND",
   "PLUGIN_DISABLED",
@@ -223,6 +234,17 @@ export const pluginManifestSchema = z
     version: z.string().min(1),
     type: z.enum(["web_content", "api", "custom"]),
     description: z.string(),
+    homepage: z.string().url().optional(),
+    author: z.string().min(1).optional(),
+    license: z.string().min(1).optional(),
+    tags: z.array(z.string().regex(/^[a-z][a-z0-9-]*$/)).default([]),
+    mcphub: z
+      .object({
+        minVersion: z.string().min(1).optional(),
+        maxVersion: z.string().min(1).optional(),
+        capabilities: z.array(z.string().min(1)).default([])
+      })
+      .optional(),
     configSchema: z.record(z.unknown()).optional(),
     credentials: z.array(pluginCredentialRequirementSchema).default([]),
     tools: z.array(pluginToolDefinitionSchema).default([])

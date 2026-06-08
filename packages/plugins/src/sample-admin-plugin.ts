@@ -6,6 +6,14 @@ export const sampleAdminPlugin = definePlugin({
   version: "0.1.0",
   type: "api",
   description: "Expose a fixture admin user API as MCP tools.",
+  homepage: "https://example.com/sample-admin",
+  author: "MCPHub",
+  license: "MIT",
+  tags: ["admin", "users"],
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "audit", "plugin-config"]
+  },
   configSchema: {
     type: "object",
     required: ["baseUrl"],

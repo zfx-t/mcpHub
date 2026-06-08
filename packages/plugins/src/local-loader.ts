@@ -4,8 +4,12 @@ import { pathToFileURL } from "node:url";
 import {
   credentialTypeSchema,
   pluginManifestSchema,
+  summarizeStandardDiagnostics,
+  validatePluginStandard,
   type Credential,
   type Plugin,
+  type PluginStandardSummary,
+  type StandardDiagnostic,
   type PluginTool
 } from "@mcphub/core";
 import { z } from "zod";
@@ -49,6 +53,8 @@ export type LocalPluginDiagnosticCode =
   | "config_validation_error"
   | "manifest_import_error"
   | "manifest_validation_error"
+  | "standard_validation_warning"
+  | "standard_validation_error"
   | "credential_binding_missing"
   | "credential_binding_type_mismatch"
   | "credential_binding_unknown"
@@ -69,6 +75,8 @@ export interface LocalPluginDiagnostic {
   entryPath?: string;
   configPath?: string;
   details?: Record<string, unknown>;
+  standard?: PluginStandardSummary;
+  standardDiagnostic?: StandardDiagnostic;
 }
 
 export interface LocalPluginSeedData {
@@ -156,6 +164,30 @@ export async function loadLocalPlugins(options: LoadLocalPluginsOptions = {}): P
       continue;
     }
     const { manifest, handlers } = loadedModule;
+    const standardValidation = validatePluginStandard(manifest);
+    if (standardValidation.diagnostics.length > 0) {
+      result.diagnostics.push(
+        ...standardValidation.diagnostics.map((diagnostic): LocalPluginDiagnostic => ({
+          code: diagnostic.severity === "error" ? "standard_validation_error" : "standard_validation_warning",
+          severity: diagnostic.severity,
+          message: diagnostic.message,
+          pluginDir: pluginPath,
+          pluginId: manifest.id,
+          entryPath,
+          configPath,
+          details: {
+            path: diagnostic.path,
+            suggestion: diagnostic.suggestion,
+            ...(diagnostic.details ?? {})
+          },
+          standard: summarizeStandardDiagnostics([diagnostic]),
+          standardDiagnostic: diagnostic
+        }))
+      );
+    }
+    if (standardValidation.errors > 0) {
+      continue;
+    }
 
     const duplicateTool = manifest.tools.find((tool) => seenToolNames.has(tool.name));
     if (duplicateTool) {
@@ -217,7 +249,8 @@ export async function loadLocalPlugins(options: LoadLocalPluginsOptions = {}): P
       pluginDir: pluginPath,
       pluginId: manifest.id,
       entryPath,
-      configPath
+      configPath,
+      standard: standardValidation
     });
   }
 

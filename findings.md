@@ -110,6 +110,26 @@
 | 用户本地生成插件目录需保留 | 当前 `examples/plugins/my-admin/` 和 `examples/plugins/my-workflow/` 是未跟踪目录，推断为用户按教程生成的实验插件；后续规划和提交应避免误清理或纳入 |
 | 阶段 20 应对齐 RSSHub 式平台，不继续做业务插件优化 | 用户明确指出目标是类似 RSSHub 的中间平台/标准软件项目：可部署、可使用、开发者按标准自行扩展 route/plugin，把没有 MCP 的能力转换为 MCP |
 | dev 版本缺口在产品化闭环而非插件表达能力 | 当前已有 MCP endpoint、插件加载、HTTP/executor tool、凭据、策略、审计、Docker 和 CLI；下一步更应补稳定配置、部署文档、健康检查/诊断、版本契约、验收脚本和实例运维可见性 |
+| v0.1.0 后续首要方向确定为通用 MCP client 接入体验 | 用户选择先做 C：通用 MCP client，不绑定 Claude/Cursor 等具体产品，先让 Agent 能基于标准 Streamable HTTP 实际接入 MCPHub |
+| 官方 MCP Streamable HTTP 要求单一 MCP endpoint | 官方 2025-06-18 transport 文档要求 Streamable HTTP server 提供单一 MCP endpoint，例如 `/mcp`，并通过 POST 发送 JSON-RPC；MCPHub 当前 Fastify `/mcp` 与该方向一致 |
+| 通用 MCP client 应覆盖初始化生命周期 | 官方 lifecycle 文档要求 `initialize` 是首个交互，客户端随后发送 `notifications/initialized`，并在后续请求中尊重协商协议版本；当前 smoke 只做 initialize 和后续请求，下一阶段可补标准 client 流程 |
+| 通用接入体验缺口在 client-facing 工具而非 server endpoint | 当前 `scripts/smoke-helpers.ts` 可直接 POST JSON-RPC 验证 `/mcp`，但它是测试辅助，不是面向用户的通用 MCP client、连接诊断或可复用示例 |
+| 通用 MCP client CLI 已补齐 Agent 接入验证入口 | `pnpm mcp:client` 已能通过真实 Streamable HTTP `/mcp` 执行 initialize、资源/工具列表、资源读取和工具调用；下一阶段瓶颈从“能不能接入”转向“怎样规模化开发、部署和治理插件” |
+| 下一阶段应避免继续堆业务插件 | 用户长期目标是 RSSHub 式中间平台；除非作为验证样板，否则单一 B 站/后台业务插件不是主线，主线应是平台标准、可复制接入流程、上线安全或生命周期诊断 |
+| 阶段 26 方向确认：平台标准化 | 用户确认采用方案 A；下一阶段应围绕插件 manifest、tool/resource 命名、错误码、兼容性、文档模板和验证清单建立 MCPHub 开发标准 |
+| 平台标准化设计已落盘为草案 | `docs/superpowers/specs/2026-06-08-platform-standardization-design.md` 定义先文档化、再共享校验、再增强 `plugin:verify`、再对齐 `/api/plugins` 和 `mcphub://status` 的增量标准化路线 |
+| 平台标准化实施计划已落盘为草案 | `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md` 将实现拆为标准文档、共享校验、loader/verifier/diagnostics 集成、模板对齐、测试和最终验证 |
+| 平台标准化已实现并验证 | 已新增 `docs/plugins/standard.md`、core 标准校验、local loader 标准诊断、`plugin:verify` 标准输出、模板/样例 metadata、`/api/plugins` 和 `mcphub://status` 标准汇总；`pnpm typecheck`、`pnpm lint`、`pnpm test`、`pnpm test:e2e`、`pnpm test:plugin`、`pnpm build`、`git diff --check` 和手动 MCP status 验证通过 |
+| 平台标准化后的主要瓶颈变为 API 文档转换 | 当前平台已能写、验、加载、诊断和调用插件；下一阶段更应帮助开发者把已有 REST/OpenAPI 文档快速生成 MCPHub 插件骨架，而不是继续堆单个业务插件 |
+| OpenAPI/API 文档导入是下一阶段推荐路线 | 该路线直接匹配“已有管理后台 REST API 文档，不修改原系统，通过 MCPHub 转成 MCP tool”的核心场景；首版应控制范围，生成可编辑本地插件和人工审查 warning，而不是追求完整 OpenAPI 覆盖 |
+| 项目主页应采用独立官网应用 | 用户在“server 静态首页 / 独立官网 / 后台管理首页”三种形态中选择独立官网；应新建 `apps/web`，与 MCP/API server 解耦，便于独立构建和部署 |
+| 首页视觉应是开发者平台 landing，而不是纯营销页 | UI/UX 检索推荐 developer tool 暗色代码感，但结合项目定位最终采用浅色文档型页面为主、深色终端/架构面板为辅，避免一整页暗色导致信息闷和层级弱 |
+| 首页首版不需要 React | 页面主要是静态介绍、代码片段和内部链接；Vite + TypeScript + semantic HTML/CSS 足够，能降低依赖、构建和审计成本 |
+| 独立官网会被根 workspace 构建纳入验证 | `pnpm-workspace.yaml` 已包含 `apps/*`，新建 `apps/web` 后根 `pnpm build` 和 `pnpm typecheck` 会覆盖该 app；实施计划必须验证 root build，避免新增官网破坏 monorepo 构建 |
+| 官网构建产物不应提交 | `.gitignore` 已包含 `dist/` 和 `**/*.tsbuildinfo`，实施时需要确认 `apps/web/dist` 与 tsbuildinfo 未被 staged |
+| 独立官网 hero 不应占满整个视口 | 初次桌面截图显示 full viewport hero 顶部留白过大；改为内容驱动高度并让下一节在首屏底部露出，信息密度和 landing page 质量更好 |
+| 同一元素同时作为 `.hero.container` 时要避免 padding 覆盖 | `.hero { padding: ... }` 会覆盖 `.container` 的左右 gutter，导致移动端贴边；应使用 `padding-block` 保留横向 padding |
+| Headless Chrome `--window-size` 不等于 CSS viewport 验证 | 普通 screenshot 可能因外部窗口尺寸造成裁切误判；需要用 CDP `Emulation.setDeviceMetricsOverride` 检查真实 `clientWidth` / `scrollWidth` |
 
 ## 平台化演进草案
 

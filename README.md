@@ -51,6 +51,33 @@ The MCP endpoint is:
 http://localhost:3000/mcp
 ```
 
+Verify the MCP endpoint with the generic client:
+
+```bash
+pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect
+```
+
+Generic client setup and troubleshooting are documented in [docs/clients/generic-mcp-client.md](docs/clients/generic-mcp-client.md).
+
+## Project Homepage
+
+MCPHub also includes an independent static homepage app for introducing the project and its developer workflow:
+
+Online homepage:
+
+```text
+http://zfxt.top/mcpHub/
+```
+
+Local development:
+
+```bash
+pnpm --filter @mcphub/web dev
+pnpm --filter @mcphub/web build
+```
+
+The homepage lives in `apps/web` and is separate from the MCP/API server in `apps/server`.
+
 ## Docker Dev Stack
 
 Start the Docker Compose stack with PostgreSQL and the built-in sample admin plugin enabled:
@@ -164,11 +191,11 @@ pnpm plugin:verify examples/plugins/my-admin
 Use the executor template for multi-step workflow tools:
 
 ```bash
-pnpm plugin:create my-workflow --template executor --tool-name my.workflow.run
+pnpm plugin:create my-workflow --template executor --tool-name my.workflow.jobs.run
 pnpm plugin:verify examples/plugins/my-workflow
 ```
 
-The full plugin authoring guide is in [docs/plugins/development.md](docs/plugins/development.md).
+The full plugin authoring guide is in [docs/plugins/development.md](docs/plugins/development.md). The reference plugin standard is in [docs/plugins/standard.md](docs/plugins/standard.md).
 
 ## HTTP API Plugin Example
 
@@ -179,6 +206,10 @@ export default {
   version: "0.1.0",
   type: "api",
   description: "Expose admin user APIs.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
   credentials: [{ id: "admin-token", type: "bearer" }],
   tools: [
     {

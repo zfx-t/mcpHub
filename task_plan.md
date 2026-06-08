@@ -4,7 +4,7 @@
 设计一个类似 RSSHub 的工具：通过可配置路由抓取网页内容，并以适合 Agent 读取和订阅的 MCP 资源/工具形式暴露。
 
 ## 当前阶段
-阶段 22：Dev 版本上线能力实现
+阶段 31：独立项目官网实现
 
 ## 各阶段
 
@@ -212,6 +212,93 @@
 - [x] Phase 7：测试与回归覆盖
 - [x] Phase 8：最终验证
 - [x] Phase 9：提交和交付
+- **状态：** complete
+
+### 阶段 23：v0.1.0 后续路线规划
+- [x] 恢复当前项目状态、规划文件、近期提交和 release 状态
+- [x] 确认 v0.1.0 已具备基础部署、诊断、插件加载、executor、开发者 CLI 和 smoke 验证能力
+- [x] 明确 v0.1.0 之后的首要目标：先做 MCP 客户端接入体验，让 Agent 能实际接入 MCPHub
+- [x] 提出 2-3 种 MCP 客户端接入体验路线并给出推荐
+- [x] 用户确认采用方案 2：通用 MCP client CLI
+- [x] 呈现通用 MCP client CLI 的架构、命令、数据流、错误处理和测试设计
+- [x] 用户确认路线后写入新的设计文档
+- [x] 设计文档自检并提交
+- [x] 用户审阅设计文档后进入实施计划
+- **状态：** complete
+
+### 阶段 24：通用 MCP client CLI 实施计划
+- [x] 恢复 `docs/superpowers/specs/2026-06-08-generic-mcp-client-design.md` 和现有脚本/测试结构
+- [x] 拆分 CLI 入口、参数解析、HTTP JSON-RPC helper、SSE/JSON 解析、命令 handler、错误输出、测试、文档和最终验证阶段
+- [x] 写入 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md`
+- [x] 自检实施计划覆盖验收标准、风险、测试和文档更新
+- [x] 用户审阅实施计划后进入代码实现
+- **状态：** complete
+
+### 阶段 25：通用 MCP client CLI 实现
+- [x] Phase 0：基线与工作树保护
+- [x] Phase 1：新增 `mcp:client` package script 和 CLI 入口
+- [x] Phase 2：实现参数解析与校验
+- [x] Phase 3：实现 Streamable HTTP JSON-RPC helper
+- [x] Phase 4：实现 JSON/SSE 响应解析
+- [x] Phase 5：实现 `inspect`、`list-resources`、`read-resource`、`list-tools`、`call-tool`
+- [x] Phase 6：实现人类可读输出、`--json`、错误提示、timeout、session header 和脱敏
+- [x] Phase 7：补充 parser、response、error、timeout、session 和真实 HTTP 集成测试
+- [x] Phase 8：新增通用 client 文档并链接 README/README_cn
+- [x] Phase 9：完成最终验证、spec 审查和代码质量审查
+- **状态：** complete
+
+### 阶段 26：v0.1.0 后续路线规划二期
+- [x] 恢复当前项目状态、规划文件、近期提交和通用 MCP client 交付结果
+- [x] 确认当前项目已经具备 Agent 通过 Streamable HTTP `/mcp` 接入并验证 MCPHub 的基础能力
+- [x] 明确下一阶段优先方向：平台标准化、真实 API 接入样板、部署安全加固或插件生命周期诊断
+- [x] 提出 2-3 种路线并给出推荐
+- [x] 用户确认后写入新的设计文档
+- [x] 设计文档自检并提交
+- [x] 用户审阅设计文档后进入实施计划
+- [x] 写入平台标准化实施计划
+- [x] 实施计划自检并提交
+- [x] 用户审阅实施计划后进入代码实现
+- [x] 平台标准化实现、验证与提交
+- **状态：** complete
+
+### 阶段 28：平台标准化后续路线规划
+- [x] 恢复当前项目状态、规划文件、近期提交和平台标准化交付结果
+- [x] 确认当前 MCPHub 已具备 dev 上线、插件加载、executor、自定义插件 CLI、标准校验、诊断 API、MCP status 和通用 MCP client 能力
+- [x] 识别下一阶段候选方向：OpenAPI/API 文档导入、真实 API-to-MCP 样板、部署安全加固、插件生命周期诊断
+- [x] 给出推荐路线：优先设计 OpenAPI/API 文档到 MCPHub 插件生成能力
+- [ ] 向用户确认下一阶段优先方向
+- [ ] 用户确认后写入新的设计文档
+- [ ] 设计文档自检并提交
+- [ ] 用户审阅设计文档后进入实施计划
+- **状态：** in_progress
+
+### 阶段 29：独立项目官网设计
+- [x] 确认主页形态采用独立官网应用，而不是挂在 server 首页或做管理后台首页
+- [x] 使用 UI/UX 设计技能生成并修正 developer platform landing 设计方向
+- [x] 明确视觉系统、信息架构、响应式、可访问性和验证标准
+- [x] 写入 `docs/superpowers/specs/2026-06-08-project-homepage-design.md`
+- [x] 设计文档自检并提交
+- [x] 用户审阅设计文档后进入实施计划
+- **状态：** complete
+
+### 阶段 30：独立项目官网实施计划
+- [x] 恢复独立官网设计文档、workspace 结构和当前仓库状态
+- [x] 拆分 `apps/web` 脚手架、语义页面、CSS 设计系统、渐进增强、文档入口、验证、浏览器检查和提交阶段
+- [x] 写入 `docs/superpowers/plans/2026-06-08-project-homepage-implementation-plan.md`
+- [x] 实施计划自检并提交
+- [x] 用户审阅实施计划后进入代码实现
+- **状态：** complete
+
+### 阶段 31：独立项目官网实现
+- [x] Phase 0：基线与工作树保护
+- [x] Phase 1：创建 `apps/web` workspace app skeleton
+- [x] Phase 2：实现语义化主页内容
+- [x] Phase 3：实现视觉系统、响应式布局和可访问性 CSS
+- [x] Phase 4：实现轻量渐进增强
+- [x] Phase 5：更新 README / README_cn 入口
+- [x] Phase 6：运行自动化验证
+- [x] Phase 7：启动 Vite 并完成桌面/移动响应式浏览器检查
+- [x] Phase 8：提交实现并汇报
 - **状态：** complete
 
 ## 关键问题

@@ -530,3 +530,222 @@
 
 ---
 *每个阶段完成后或遇到错误时更新此文件*
+
+### 阶段 23：v0.1.0 后续路线规划
+- **状态：** complete
+- **开始时间：** 2026-06-08 11:00:29 CST
+- 执行的操作：
+  - 用户要求继续规划后面的工作，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已恢复当前 Git 状态、近期提交、`task_plan.md`、`progress.md`、`findings.md`、`package.json`、最新设计文档、插件开发文档和 dev 部署文档。
+  - 当前分支 `develope` 与 `origin/develope` 对齐，工作树只有本轮规划文件改动。
+  - 当前项目已经完成 `v0.1.0` dev release：具备 Streamable HTTP MCP endpoint、本地插件加载、HTTP API tool、executor workflow、环境变量凭据、策略、audit、插件 CLI、示例插件、诊断 API、MCP status resource、本地/Docker smoke 和双语 README。
+  - 初步判断：下一阶段不应继续增加单一业务插件，而应围绕 MCPHub 作为 RSSHub 式中间平台的“标准化、可接入、可运营、可扩展”能力选择一个主线。
+- 下一步：
+  - 用户选择先实现 D：MCP 客户端接入体验，让 Agent 能实际接入 MCPHub；后续再做 A：平台标准化和开发者体验强化。
+  - 下一步确认第一批目标 MCP client / Agent，再提出 2-3 种接入体验路线和推荐方案。
+  - 用户确认第一批采用 C：通用 MCP client，不绑定 Claude/Cursor 等具体产品。
+  - 已提出三种路线：curl 文档包、通用 MCP client CLI、通用接入包 + 最小 Agent 示例；用户确认采用方案 2：通用 MCP client CLI。
+  - 已重新读取 `brainstorming` 和 `planning-with-files-zh` 技能说明，确认当前仍处于设计门槛内，不能直接进入代码实现。
+  - 写入设计文档 `docs/superpowers/specs/2026-06-08-generic-mcp-client-design.md`。
+  - 完成设计文档自检：无 TBD/TODO/FIXME/占位符；范围明确排除具体产品客户端配置、完整 Agent 框架、认证/OAuth、持久 session、stdio transport 和独立 npm 包发布；`git diff --check` 通过。
+  - 设计提交：`97e092d Design generic MCP client CLI`。
+  - 用户确认继续完成，视为设计文档通过，进入实施计划阶段。
+
+### 阶段 24：通用 MCP client CLI 实施计划
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 重新读取通用 MCP client 设计文档、现有 `scripts/` 目录、plugin CLI 测试和 smoke 脚本，确认实现可自然落在 `scripts/mcp-client.ts` 与 `scripts/mcp-client/` helper 下。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-9：基线、package script/CLI 入口、参数解析、HTTP JSON-RPC helper、响应解析、命令 handler、输出和错误、自动化测试、文档、最终验证。
+  - 完成实施计划自检：计划文档本身无 TBD/TODO/FIXME/占位符；范围明确排除具体产品客户端配置、完整 Agent 框架、认证/OAuth、持久 session、stdio transport 和独立 npm 包发布；验收标准、风险和测试策略已覆盖。
+- 下一步：
+  - 提交实施计划，并等待用户确认进入代码实现。
+
+### 阶段 25：通用 MCP client CLI 实现
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 按 `docs/superpowers/plans/2026-06-08-generic-mcp-client-implementation-plan.md` 实现通用 MCP client CLI。
+  - 新增 `pnpm mcp:client`，入口为 `scripts/mcp-client.ts`。
+  - 新增 `scripts/mcp-client/common.ts`：解析 `--url`、`--json`、`--protocol-version`、`--timeout-ms`、`--uri`、`--name`、`--args`。
+  - 新增 `scripts/mcp-client/client.ts`：通过真实 Streamable HTTP `/mcp` 发送 JSON-RPC，支持 JSON/SSE 解析、进程内 `Mcp-Session-Id`、请求超时和脱敏错误输出。
+  - 新增 `scripts/mcp-client/commands.ts`：实现 `inspect`、`list-resources`、`read-resource`、`list-tools`、`call-tool` 和人类可读/JSON 输出。
+  - 新增 `scripts/mcp-client.test.ts`，覆盖 parser、JSON/SSE 解析、HTTP 错误、429、malformed response、network failure、timeout、body stall、session header、脱敏和真实 HTTP MCPHub 集成。
+  - 新增 `docs/clients/generic-mcp-client.md`，并在 `README.md` 和 `README_cn.md` 中加入通用 client 入口。
+- 审查与修复：
+  - spec 审查初审要求补 tool/resource not found 引导、parse error 状态/类型/body 摘要和错误路径测试；已修复并通过复审。
+  - 代码质量审查初审要求支持 session header、请求 timeout、错误输出脱敏；已修复。
+  - 代码质量复审指出 timeout 应覆盖 body consumption；已修复并补 headers-sent/body-never-ends 回归测试。
+  - 代码质量最终复审通过。
+- 验证：
+  - `pnpm typecheck` 通过。
+  - `pnpm lint` 通过。
+  - `pnpm test` 通过，15 个测试文件、117 个测试。
+  - `pnpm test:e2e` 通过。
+  - `pnpm test:plugin` 通过。
+  - `pnpm build` 通过。
+  - `git diff --check` 通过。
+  - 运行中服务验证通过：`inspect`、`list-tools`、`read-resource --uri mcphub://status`、`call-tool --name source.search --args '{}'` 均通过。
+
+### 阶段 26：v0.1.0 后续路线规划二期
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求继续规划接下来做什么，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已恢复当前 Git 状态、近期提交、`task_plan.md`、`progress.md`、`findings.md` 和项目文件清单。
+  - 当前分支 `develope` 比 `origin/develope` 领先 3 个提交：通用 MCP client 设计、实施计划和实现提交尚未推送。
+  - 当前阶段前置能力已完成：v0.1.0 dev release、插件加载、HTTP/executor tool、凭据、策略、audit、开发者 CLI、诊断 API、本地/Docker smoke、双语 README 和通用 MCP client CLI。
+  - 初步判断：通用 client 已解决“Agent 如何实际连接和检查 MCPHub”的第一层问题；下一阶段应围绕 MCPHub 作为 RSSHub 式中间平台的可复用标准、真实接入样板、部署安全或插件生命周期可观测性选择一个主线。
+- 下一步：
+  - 按 brainstorming 流程先向用户确认下一阶段优先方向，再写设计文档；在用户批准设计前不进入代码实现。
+  - 用户确认采用方案 A：平台标准化。
+  - 下一步呈现平台标准化设计草案，确认范围后写入设计文档。
+  - 已写入设计文档草案 `docs/superpowers/specs/2026-06-08-platform-standardization-design.md`。
+  - 设计覆盖插件标准文档、manifest 标准、tool/resource 命名、input/output、错误码、兼容性模型、`plugin:verify` 增强、平台诊断、数据流、测试和验收标准。
+  - 设计文档自检通过：未发现 TBD/TODO/FIXME/占位符；范围明确排除远程插件市场、插件发布签名、OpenAPI 导入、浏览器自动化、多租户权限、生产级 MCP 鉴权和 runtime 重写；`git diff --check` 通过。
+  - 下一步提交设计文档与规划文件，并请求用户审阅。
+  - 设计提交：`e7a3e0b Design platform standardization`。
+  - 用户确认设计，要求开始编写实施计划。
+  - 已写入实施计划草案 `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-9：基线、标准文档、core 标准类型与校验、local loader 诊断、`plugin:verify` 标准门禁、平台诊断、模板和样例对齐、自动化测试、最终验证、提交策略。
+  - 实施计划自检通过：未发现 TBD/TODO/FIXME/占位符；范围与设计一致，明确排除插件市场、签名、OpenAPI 导入、浏览器自动化、多租户权限、生产 MCP 鉴权和 runtime 重写；`git diff --check` 通过。
+  - 下一步提交实施计划与规划文件，并请求用户审阅。
+
+### 阶段 27：平台标准化实现
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求使用 `$executing-plans` 和 `$subagent-driven-development` 按计划完成任务。
+  - 已读取实施计划 `docs/superpowers/plans/2026-06-08-platform-standardization-implementation-plan.md`、`executing-plans` 和 `subagent-driven-development` 技能说明。
+  - Phase 0 基线通过：`pnpm typecheck` 通过。
+  - 已使用子代理做只读勘察，确认 `/api/plugins`、`mcphub://status`、plugin templates、local loader、plugin verifier 和测试接缝。
+  - 已新增 `docs/plugins/standard.md`，并在 `docs/plugins/development.md`、`README.md`、`README_cn.md` 链接标准文档。
+  - 已在 core 增加标准 metadata schema、`PlatformCapability` / `StandardDiagnostic` / `PluginStandardSummary` 类型，以及 `validatePluginStandard()` 纯校验 helper。
+  - 已将 local loader 接入标准校验：标准 warning 不阻断加载，标准 error 产生诊断并跳过插件；disabled 插件仍不 import entrypoint。
+  - 已增强 `plugin:verify` 输出：显示 `Standard`、`Warnings`、`Errors`，失败诊断包含标准 code/path/suggestion。
+  - 已对齐模板和样例插件：`plugin:create` 生成 `mcphub.minVersion` 与 capabilities，sample admin 和 fake-upload 加入标准 metadata。
+  - 已对齐平台诊断：`/api/plugins` 包含插件 `standard` 摘要，`mcphub://status` / `/api/status` 包含标准聚合计数。
+  - focused verification 已通过：
+    - `pnpm vitest run scripts/plugin-cli.test.ts packages/core/src/core.test.ts packages/plugins/src/local-loader.test.ts packages/mcp/src/gateway.test.ts apps/server/src/app.test.ts` 通过，5 个测试文件、67 个测试。
+    - `pnpm typecheck` 通过。
+- 下一步：
+  - 代码质量自查已完成：修复文档旧 tool name、README 示例 metadata、gateway 测试 matcher 和 smoke fixture legacy warning 噪声。
+  - 全量验证通过：
+    - `pnpm typecheck` 通过。
+    - `pnpm lint` 通过。
+    - `pnpm test` 通过，15 个测试文件、124 个测试。
+    - `pnpm test:e2e` 通过。
+    - `pnpm test:plugin` 通过。
+    - `pnpm build` 通过。
+    - `git diff --check` 通过。
+  - 手动验证通过：
+    - `pnpm plugin:verify examples/plugins/fake-upload` 输出 `Standard: compatible`、`Warnings: 0`、`Errors: 0`。
+    - 默认 3000 端口被已有进程占用，改用 `PORT=3011 REQUEST_LOGGING=false pnpm dev` 启动临时服务。
+    - `curl http://127.0.0.1:3011/api/plugins` 返回 `{"plugins":[],"diagnostics":[]}`。
+    - `pnpm mcp:client --url http://127.0.0.1:3011/mcp read-resource --uri mcphub://status` 成功返回 status，其中 `plugins.standard` 为 `{ compatible: 0, warnings: 0, errors: 0 }`。
+    - 临时 dev server 已停止。
+  - 已按功能拆分提交：
+    - `55b17d9 Add plugin standard validation`
+    - `0c7af4c Enforce plugin standard in local verification`
+    - `59beba2 Expose plugin standard diagnostics`
+    - `0f870a9 Record platform standardization completion`
+  - 阶段 27 完成。
+
+### 阶段 28：平台标准化后续路线规划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求继续规划后续任务，并指定使用 `$brainstorming` 和 `$planning-with-files-zh`。
+  - 已恢复当前 Git 状态、近期提交、`task_plan.md`、`progress.md`、`findings.md`、插件标准文档、插件开发文档和 `package.json` 脚本。
+  - 当前分支 `develope` 工作树起始状态干净，本地比 `origin/develope` 领先 10 个提交。
+  - 当前已完成能力：dev 上线诊断、本地插件加载、HTTP operation tool、executor workflow、credential/policy/audit、插件脚手架与验证、示例插件、通用 MCP client CLI、插件标准校验和平台标准诊断。
+  - 初步判断：平台已经从“能写插件”进入“如何规模化把现有 API/网站能力转成插件”的阶段；下一阶段应避免继续做单个业务插件，优先补 API 文档到 MCPHub 插件的转换路径。
+- 候选路线：
+  - 方案 A：OpenAPI/API 文档导入到 MCPHub 插件。支持从 OpenAPI/Swagger JSON/YAML 或简化 API 描述生成本地插件骨架、tool metadata、config/credential/policy 占位和人工审查 warning。
+  - 方案 B：完整真实 API-to-MCP 接入样板。用一个示例后台 API 文档演示从文档、插件代码、启动 MCPHub 到 `mcp:client call-tool` 的全过程。
+  - 方案 C：部署安全加固。增加 MCP/HTTP 诊断 token、部署环境校验和更明确的生产暴露边界。
+  - 方案 D：插件生命周期诊断。增强 reload、enable/disable、版本/标准状态汇总和插件运行状态可视化 API。
+- 推荐：
+  - 优先选择方案 A，并把方案 B 作为验收样板嵌入设计。理由是用户的核心场景是“不修改已有管理后台和 REST API，通过 MCPHub 插件把 API 转成 MCP”，OpenAPI/API 文档导入能直接降低开发者转换成本，也更接近 RSSHub 式标准平台。
+- 下一步：
+  - 向用户确认是否采用 OpenAPI/API 文档导入作为下一阶段主线；用户确认前不进入代码实现。
+
+### 阶段 29：独立项目官网设计
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 用户要求做一个前端或者主页内容，用来展示并介绍项目主要内容。
+  - 已读取 `brainstorming` 和 `ui-ux-pro-max` 技能说明，确认前端/主页属于设计任务，需先确认设计再实现。
+  - 已检查现有 workspace、`apps/extension` Vite 配置和前端文件，确认当前没有独立官网应用，只有浏览器扩展前端。
+  - 向用户提出三种主页形态：挂在 server 的静态首页、独立官网应用、后台管理首页；用户选择 B：独立官网应用。
+  - 已使用 `ui-ux-pro-max` 查询 developer tool / middleware platform / landing page 设计系统、landing pattern、配色、字体、响应式和可访问性建议。
+  - 设计取舍：采用 `apps/web` 独立 Vite + TypeScript + plain HTML/CSS，不引入 React；页面定位为 developer platform landing。
+  - 视觉取舍：不采用全暗色 terminal 风，而采用浅色文档型页面为主、深色终端/架构面板为视觉焦点，强调 MCPHub 的平台可信度和开发者工具属性。
+  - 用户确认该 UI 设计方向后，已写入设计文档 `docs/superpowers/specs/2026-06-08-project-homepage-design.md`。
+- 下一步：
+  - 已完成设计文档自检：新文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围明确排除 dashboard、live status、marketplace、login、3D/video、React、docs routing 和语言切换；`git diff --check` 通过。
+  - 用户已确认设计文档没有问题，进入实施计划阶段。
+
+### 阶段 30：独立项目官网实施计划
+- **状态：** in_progress
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 已恢复独立官网设计文档 `docs/superpowers/specs/2026-06-08-project-homepage-design.md`。
+  - 已检查 `pnpm-workspace.yaml`、根 `package.json`、`apps/extension`/`apps/server` 结构和 `.gitignore`。
+  - 确认 `apps/*` 已被 workspace 覆盖，新建 `apps/web` 会自然纳入 `pnpm -r build` 和 `pnpm -r typecheck`。
+  - 写入实施计划 `docs/superpowers/plans/2026-06-08-project-homepage-implementation-plan.md`。
+  - 实施计划拆分为 Phase 0-8：基线与工作树保护、workspace app skeleton、语义页面内容、视觉系统和 CSS、轻量渐进增强、README 入口、自动化验证、浏览器验证、提交和汇报。
+  - 验证策略明确包含 `pnpm --filter @mcphub/web typecheck`、`pnpm --filter @mcphub/web build`、`pnpm lint`、`pnpm typecheck`、`pnpm build`、`git diff --check` 和浏览器响应式检查。
+- 下一步：
+  - 已完成实施计划自检：计划文档未发现 `TBD`、`TODO`、`FIXME`、占位符；范围与设计文档一致；验收标准覆盖 workspace app、页面内容、响应式、构建、lint/typecheck、浏览器检查和构建产物排除；`git diff --check` 通过。
+  - 用户已批准实施计划，进入代码实现。
+
+### 阶段 31：独立项目官网实现
+- **状态：** complete
+- **开始时间：** 2026-06-08 CST
+- 执行的操作：
+  - 按 `docs/superpowers/plans/2026-06-08-project-homepage-implementation-plan.md` 实现独立官网。
+  - 新增 `apps/web` workspace app：
+    - `apps/web/package.json`
+    - `apps/web/tsconfig.json`
+    - `apps/web/vite.config.ts`
+    - `apps/web/index.html`
+    - `apps/web/src/main.ts`
+    - `apps/web/src/styles.css`
+  - 页面实现内容：
+    - Hero 展示 MCPHub 定位、CTA、当前能力标签和深色 MCPHub flow panel。
+    - Platform positioning 解释“不是单插件 / 不替代原后台 / 面向 Agent 标准出口”。
+    - Core capabilities 展示本地插件加载、HTTP tool、executor、凭据策略、audit、插件标准、MCP endpoint 和 client CLI。
+    - Developer workflow 展示 `plugin:create`、`plugin:verify`、`MCPHUB_PLUGIN_DIR=... pnpm dev`、`mcp:client list-tools`。
+    - Plugin model 展示插件目录和最小 manifest 片段。
+    - Status and roadmap 诚实区分 available now、next 和 boundaries。
+    - Start here 提供 README、README_cn、插件开发指南、插件标准、fake-upload 示例链接。
+  - 渐进增强：
+    - 当前年份自动填充。
+    - hash 导航 active state。
+    - 命令和 manifest 片段 copy button，带成功/失败反馈。
+  - 更新 `README.md` 和 `README_cn.md`，新增独立官网运行和构建入口。
+- UI 修复：
+  - 首次桌面截图发现 hero 顶部留白过大，已取消 full viewport hero 并让下一节在首屏底部露出。
+  - 移动端普通 headless screenshot 因 Chrome 外部窗口和 CSS viewport 不一致产生裁切误判；通过 CDP 强制 375px viewport 验证真实 `scrollWidth == clientWidth`。
+  - 修复 `.hero.container` padding 覆盖问题，保留移动端左右 gutter。
+  - 修复 grid/panel/code 内容的 `min-width: 0` 和换行保护。
+- 验证：
+  - `pnpm --filter @mcphub/web typecheck` 通过。
+  - `pnpm --filter @mcphub/web build` 通过。
+  - `pnpm lint` 通过。
+  - `pnpm typecheck` 通过。
+  - `pnpm build` 通过。
+  - `git diff --check` 通过。
+  - Vite dev server 启动成功，实际地址为 `http://127.0.0.1:5173/`。
+  - `curl -fsS http://127.0.0.1:5173/` 返回 homepage HTML。
+  - CDP 375px viewport：`clientWidth=375`、`scrollWidth=375`、`bodyScrollWidth=375`。
+  - CDP 768px viewport：`clientWidth=753`、`scrollWidth=753`、`bodyScrollWidth=753`。
+  - CDP 1024px viewport：`clientWidth=1009`、`scrollWidth=1009`、`bodyScrollWidth=1009`。
+  - CDP 1440px viewport：`clientWidth=1425`、`scrollWidth=1425`、`bodyScrollWidth=1425`。
+  - 通过 screenshots 检查 375px 和 1440px：无横向滚动、无文本重叠、首屏信息清晰、深色面板可读、桌面首屏可见下一节提示。
+  - 临时 Vite dev server 和 headless Chrome CDP 会话已停止。
+- 下一步：
+  - 已检查 diff 和 ignored 文件，确认 `apps/web/dist` 与 `apps/web/node_modules` 未纳入提交范围。
+  - 准备提交实现。

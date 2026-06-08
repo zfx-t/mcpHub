@@ -124,10 +124,11 @@ describe("server app", () => {
     await expect(repo.getCredentialForRequirement("sample-admin", "admin-token")).resolves.toMatchObject({
       secretRef: "env:ADMIN_TOKEN"
     });
-    expect(platform?.pluginMetadata?.["sample-admin"]).toEqual({
-      source: "built_in",
-      credentials: [{ id: "admin-token", type: "bearer", configured: true }]
-    });
+      expect(platform?.pluginMetadata?.["sample-admin"]).toEqual({
+        source: "built_in",
+        credentials: [{ id: "admin-token", type: "bearer", configured: true }],
+        standard: { compatible: true, warnings: 0, errors: 0, diagnostics: [] }
+      });
   });
 
   it("preserves sample admin tool arguments through the SDK MCP transport", async () => {
@@ -203,6 +204,7 @@ describe("server app", () => {
       expect(platform?.pluginPolicies?.["local-admin"]).toEqual({ dangerousMode: "allow" });
       expect(platform?.pluginMetadata?.["local-admin"]).toMatchObject({
         source: "local",
+        standard: { compatible: true, warnings: 0, errors: 0 },
         credentials: [{ id: "admin-token", type: "bearer", configured: true }]
       });
       await expect(repo.getPlugin("local-admin")).resolves.toMatchObject({ config: { baseUrl: "https://admin.local" } });
@@ -254,13 +256,19 @@ describe("server app", () => {
       const status = statusResponse.json() as {
         service: string;
         repository: { mode: string; databaseConfigured: boolean };
-        plugins: { directoryConfigured: boolean; loaded: number; disabled: number; diagnostics: number };
+        plugins: {
+          directoryConfigured: boolean;
+          loaded: number;
+          disabled: number;
+          diagnostics: number;
+          standard: { compatible: number; warnings: number; errors: number };
+        };
         mcp: { resources: { uris: string[] }; tools: { names: string[]; pluginTools: Array<{ name: string; execution: string }> } };
       };
       expect(status).toMatchObject({
         service: "mcphub",
         repository: { mode: "memory", databaseConfigured: false },
-        plugins: { directoryConfigured: true, loaded: 1, disabled: 1 }
+        plugins: { directoryConfigured: true, loaded: 1, disabled: 1, standard: { compatible: 1, warnings: 0, errors: 0 } }
       });
       expect(status.plugins.diagnostics).toBeGreaterThanOrEqual(3);
       expect(status.mcp.resources.uris).toContain("mcphub://status");
@@ -272,6 +280,15 @@ describe("server app", () => {
 
       const pluginsResponse = await app.inject({ method: "GET", url: "/api/plugins" });
       expect(pluginsResponse.statusCode).toBe(200);
+      const pluginsBody = pluginsResponse.json() as { plugins: Array<{ id: string; standard?: { compatible: boolean; warnings: number; errors: number } }> };
+      expect(pluginsBody.plugins).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "local-admin",
+            standard: expect.objectContaining({ compatible: true, warnings: 0, errors: 0 })
+          })
+        ])
+      );
       expect(pluginsResponse.body).toContain("local-admin");
       expect(pluginsResponse.body).toContain("disabled_plugin");
       expect(pluginsResponse.body).toContain("missing_entrypoint");
@@ -340,6 +357,10 @@ function localPluginModuleSource(pluginId: string, toolPrefix: string): string {
   version: "0.1.0",
   type: "api",
   description: "Local plugin fixture",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "audit", "plugin-config"]
+  },
   credentials: [{ id: "admin-token", type: "bearer" }],
   tools: [
     {

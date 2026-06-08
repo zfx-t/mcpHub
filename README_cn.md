@@ -49,6 +49,33 @@ MCP endpoint：
 http://localhost:3000/mcp
 ```
 
+使用通用客户端验证 MCP endpoint：
+
+```bash
+pnpm mcp:client --url http://127.0.0.1:3000/mcp inspect
+```
+
+通用客户端接入和排错说明见 [docs/clients/generic-mcp-client.md](docs/clients/generic-mcp-client.md)。
+
+## 项目主页
+
+MCPHub 也包含一个独立的静态官网应用，用来介绍项目定位和开发者接入流程：
+
+线上主页：
+
+```text
+http://zfxt.top/mcpHub/
+```
+
+本地开发：
+
+```bash
+pnpm --filter @mcphub/web dev
+pnpm --filter @mcphub/web build
+```
+
+该主页位于 `apps/web`，与 `apps/server` 中的 MCP/API 服务解耦。
+
 ## Docker 开发栈
 
 启动带 PostgreSQL 和内置 sample admin plugin 的 Docker Compose 服务：
@@ -162,11 +189,11 @@ pnpm plugin:verify examples/plugins/my-admin
 创建多步骤工作流插件骨架：
 
 ```bash
-pnpm plugin:create my-workflow --template executor --tool-name my.workflow.run
+pnpm plugin:create my-workflow --template executor --tool-name my.workflow.jobs.run
 pnpm plugin:verify examples/plugins/my-workflow
 ```
 
-完整插件开发指南见 [docs/plugins/development.md](docs/plugins/development.md)。
+完整插件开发指南见 [docs/plugins/development.md](docs/plugins/development.md)，插件标准参考见 [docs/plugins/standard.md](docs/plugins/standard.md)。
 
 ## HTTP API 插件示例
 
@@ -177,6 +204,10 @@ export default {
   version: "0.1.0",
   type: "api",
   description: "Expose admin user APIs.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
   credentials: [{ id: "admin-token", type: "bearer" }],
   tools: [
     {

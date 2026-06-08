@@ -21,17 +21,33 @@ describe("plugin developer CLI", () => {
     const verified = await verifyPlugin(created.pluginDir);
 
     expect(created.files.map((file) => path.basename(file)).sort()).toEqual(["README.md", "index.js", "plugin.config.json"]);
-    expect(verified.lines).toEqual(["Plugin verification passed", "Plugin: my-admin", "Tools:", "- admin.users.list (read, http)"]);
+    expect(verified.lines).toEqual([
+      "Plugin verification passed",
+      "Plugin: my-admin",
+      "Standard: compatible",
+      "Warnings: 0",
+      "Errors: 0",
+      "Tools:",
+      "- admin.users.list (read, http)"
+    ]);
   });
 
   it("creates and verifies an executor plugin", async () => {
     const outDir = await tempDir();
-    const options = parseCreateArgs(["my-workflow", "--template", "executor", "--out", outDir, "--tool-name", "workflow.run"]);
+    const options = parseCreateArgs(["my-workflow", "--template", "executor", "--out", outDir, "--tool-name", "workflow.jobs.run"]);
 
     const created = await createPlugin(options);
     const verified = await verifyPlugin(created.pluginDir);
 
-    expect(verified.lines).toEqual(["Plugin verification passed", "Plugin: my-workflow", "Tools:", "- workflow.run (write, executor)"]);
+    expect(verified.lines).toEqual([
+      "Plugin verification passed",
+      "Plugin: my-workflow",
+      "Standard: compatible",
+      "Warnings: 0",
+      "Errors: 0",
+      "Tools:",
+      "- workflow.jobs.run (write, executor)"
+    ]);
     const indexSource = await readFile(path.join(created.pluginDir, "index.js"), "utf8");
     expect(indexSource).toContain('handler: "runWorkflow"');
     expect(indexSource).toContain("async runWorkflow");
@@ -44,7 +60,15 @@ describe("plugin developer CLI", () => {
     const created = await createPlugin(options);
     const verified = await verifyPlugin(created.pluginDir);
 
-    expect(verified.lines).toEqual(["Plugin verification passed", "Plugin: dev_exec", "Tools:", "- dev.exec.run (write, executor)"]);
+    expect(verified.lines).toEqual([
+      "Plugin verification passed",
+      "Plugin: dev_exec",
+      "Standard: compatible",
+      "Warnings: 0",
+      "Errors: 0",
+      "Tools:",
+      "- dev.exec.run (write, executor)"
+    ]);
   });
 
   it("fails when an output directory exists without force", async () => {
@@ -84,13 +108,51 @@ describe("plugin developer CLI", () => {
 
   it("fails verification when an executor handler is missing", async () => {
     const outDir = await tempDir();
-    const options = parseCreateArgs(["my-workflow", "--template", "executor", "--out", outDir, "--tool-name", "workflow.run"]);
+    const options = parseCreateArgs(["my-workflow", "--template", "executor", "--out", outDir, "--tool-name", "workflow.jobs.run"]);
     const created = await createPlugin(options);
     const indexPath = path.join(created.pluginDir, "index.js");
     const indexSource = await readFile(indexPath, "utf8");
     await writeFile(indexPath, indexSource.replace("runWorkflow(input, context)", "otherWorkflow(input, context)"), "utf8");
 
     await expect(verifyPlugin(created.pluginDir)).rejects.toThrow(/executor_handler_missing/);
+  });
+
+  it("passes verification with warnings for legacy plugins without standard metadata", async () => {
+    const outDir = await tempDir();
+    const created = await createPlugin(parseCreateArgs(["legacy-plugin", "--template", "http-api", "--out", outDir, "--tool-name", "legacy.items.list"]));
+    const indexPath = path.join(created.pluginDir, "index.js");
+    const indexSource = await readFile(indexPath, "utf8");
+    await writeFile(
+      indexPath,
+      indexSource.replace(`  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "plugin-config"]
+  },
+`, ""),
+      "utf8"
+    );
+
+    const verified = await verifyPlugin(created.pluginDir);
+
+    expect(verified.lines).toEqual([
+      "Plugin verification passed",
+      "Plugin: legacy-plugin",
+      "Standard: compatible",
+      "Warnings: 1",
+      "Errors: 0",
+      "Tools:",
+      "- legacy.items.list (read, http)"
+    ]);
+  });
+
+  it("fails verification for unsupported standard capabilities", async () => {
+    const outDir = await tempDir();
+    const created = await createPlugin(parseCreateArgs(["future-plugin", "--template", "executor", "--out", outDir, "--tool-name", "future.jobs.run"]));
+    const indexPath = path.join(created.pluginDir, "index.js");
+    const indexSource = await readFile(indexPath, "utf8");
+    await writeFile(indexPath, indexSource.replace('"plugin-config"', '"future-runtime"'), "utf8");
+
+    await expect(verifyPlugin(created.pluginDir)).rejects.toThrow(/PLUGIN_COMPATIBILITY_ERROR/);
   });
 
   it("reports disabled plugins as skipped", async () => {
@@ -117,8 +179,24 @@ describe("plugin developer CLI", () => {
     const leftResult = await verifyPlugin(left.pluginDir);
     const rightResult = await verifyPlugin(right.pluginDir);
 
-    expect(leftResult.lines).toEqual(["Plugin verification passed", "Plugin: left-plugin", "Tools:", "- left.plugin.read (read, http)"]);
-    expect(rightResult.lines).toEqual(["Plugin verification passed", "Plugin: custom-plugin", "Tools:", "- right.plugin.read (read, http)"]);
+    expect(leftResult.lines).toEqual([
+      "Plugin verification passed",
+      "Plugin: left-plugin",
+      "Standard: compatible",
+      "Warnings: 0",
+      "Errors: 0",
+      "Tools:",
+      "- left.plugin.read (read, http)"
+    ]);
+    expect(rightResult.lines).toEqual([
+      "Plugin verification passed",
+      "Plugin: custom-plugin",
+      "Standard: compatible",
+      "Warnings: 0",
+      "Errors: 0",
+      "Tools:",
+      "- right.plugin.read (read, http)"
+    ]);
   });
 });
 

@@ -142,6 +142,7 @@ try {
   assertEqual(status.body.service, "mcphub", "status API service");
   assertIncludes(status.body, "mcphub://status", "status API includes status resource");
   assertIncludes(status.body, "local.admin.users.list", "status API includes local tool");
+  assertIncludes(status.body, '"standard":{"compatible":4,"warnings":0,"errors":0}', "status API includes standard summary");
   assertNotIncludes(status.body, "local-secret-token", "status API redacts local secret value");
 
   const plugins = await getJson(`${baseUrl}/api/plugins`);
@@ -188,6 +189,7 @@ try {
   const statusResourceText = mcpText(statusResource.body);
   assertIncludes(statusResourceText, "mcphub://status", "status resource includes status URI");
   assertIncludes(statusResourceText, "fake.upload.video", "status resource includes executor tool");
+  assertIncludes(statusResourceText, '"standard": {\n      "compatible": 4,\n      "warnings": 0,\n      "errors": 0\n    }', "status resource includes standard summary");
   assertNotIncludes(statusResourceText, "fake-upload-secret", "status resource redacts fake upload secret");
 
   const toolList = await postJson(`${baseUrl}/mcp`, { jsonrpc: "2.0", id: 12, method: "tools/list", params: {} });
@@ -421,6 +423,10 @@ function localPluginModuleSource(): string {
   version: "0.1.0",
   type: "api",
   description: "Local admin smoke plugin.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["http", "credentials", "policy", "audit", "plugin-config"]
+  },
   credentials: [{ id: "admin-token", type: "bearer" }],
   tools: [
     {
@@ -451,6 +457,10 @@ function fakeUploadPluginModuleSource(): string {
   version: "0.1.0",
   type: "custom",
   description: "Fake multi-step executor upload smoke plugin.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["executor", "credentials", "policy", "audit", "checkpoint", "plugin-config"]
+  },
   credentials: [{ id: "upload-token", type: "bearer" }],
   tools: [
     {
@@ -504,6 +514,10 @@ function blockedUploadPluginModuleSource(): string {
   version: "0.1.0",
   type: "custom",
   description: "Executor plugin used to prove dangerous block prevents handler invocation.",
+  mcphub: {
+    minVersion: "0.1.0",
+    capabilities: ["executor", "policy", "audit", "checkpoint", "plugin-config"]
+  },
   tools: [
     {
       name: "blocked.upload.video",

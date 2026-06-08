@@ -1,5 +1,6 @@
 import { AuditLogger } from "@mcphub/audit";
 import { EnvironmentCredentialStore } from "@mcphub/credentials";
+import { validatePluginStandard } from "@mcphub/core";
 import type { McpHubRepository } from "@mcphub/db";
 import type { PlatformGatewayOptions, PlatformPluginMetadata } from "@mcphub/mcp";
 import { PluginRegistry, pluginRecordFromManifest, pluginToolsFromManifest, sampleAdminPlugin, type PluginManifest } from "@mcphub/plugins";
@@ -39,7 +40,8 @@ export async function createPlatformServices(input: PlatformServicesInput): Prom
     });
     pluginMetadata["sample-admin"] = {
       source: "built_in",
-      credentials: [{ id: "admin-token", type: "bearer", configured: true }]
+      credentials: [{ id: "admin-token", type: "bearer", configured: true }],
+      standard: validatePluginStandard(sampleAdminPlugin)
     };
     pluginPolicies["sample-admin"] = { dangerousMode: "block" };
   }
@@ -50,10 +52,12 @@ export async function createPlatformServices(input: PlatformServicesInput): Prom
     console.warn(`[mcphub] ${diagnostic.code} ${diagnostic.pluginDir ?? ""}: ${diagnostic.message}`);
   }
   for (const plugin of localPlugins.seed.plugins) {
+    const loadedDiagnostic = localPlugins.diagnostics.find((diagnostic) => diagnostic.pluginId === plugin.id && diagnostic.code === "loaded_plugin");
     await input.repository.upsertPlugin(plugin);
     pluginMetadata[plugin.id] = {
       source: "local",
-      pluginDir: localPlugins.diagnostics.find((diagnostic) => diagnostic.pluginId === plugin.id && diagnostic.code === "loaded_plugin")?.pluginDir,
+      pluginDir: loadedDiagnostic?.pluginDir,
+      standard: loadedDiagnostic?.standard,
       credentials: localPlugins.seed.credentials
         .filter((credential) => credential.pluginId === plugin.id)
         .map((credential) => ({

@@ -156,8 +156,8 @@ export function validateBaseUrl(value: string): void {
 }
 
 export function validateToolName(value: string): void {
-  if (!/^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*)+$/.test(value)) {
-    throw new PluginCliError("Invalid tool name. Use dot-separated lowercase identifiers, such as admin.users.list.");
+  if (!/^[a-z][a-z0-9]*(\.[a-z][a-z0-9]*){2,}$/.test(value)) {
+    throw new PluginCliError("Invalid tool name. Use <domain>.<resource>.<action>, such as admin.users.list.");
   }
 }
 
