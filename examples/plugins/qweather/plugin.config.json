@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "config": {
+    "baseUrl": "https://REPLACE_WITH_YOUR_QWEATHER_HOST"
+  },
+  "credentials": {
+    "qweather-key": {
+      "type": "api_key_header",
+      "secretRef": "env:QWEATHER_API_KEY",
+      "scope": "X-QW-Api-Key"
+    }
+  },
+  "policy": {
+    "dangerousMode": "auditOnly"
+  }
+}
