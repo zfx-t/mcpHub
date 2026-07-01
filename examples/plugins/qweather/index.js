@@ -47,7 +47,10 @@ export default {
     async lookupWeather(input, context) {
       const city = input.city;
       const geo = await context.http.get("/geo/v2/city/lookup", { query: { location: city } });
-      if (geo.code !== "200" || !Array.isArray(geo.location) || geo.location.length === 0) {
+      if (geo.code !== "200") {
+        throw new Error(`QWeather geo/city/lookup returned error code ${geo.code} for city '${city}'.`);
+      }
+      if (!Array.isArray(geo.location) || geo.location.length === 0) {
         throw new Error(`No location found for city '${city}'.`);
       }
       const resolved = geo.location[0];
