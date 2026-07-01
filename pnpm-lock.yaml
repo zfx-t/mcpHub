@@ -112,6 +112,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/plugins
 
+  apps/web: {}
+
   packages/api-connector:
     dependencies:
       '@mcphub/core':
